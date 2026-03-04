@@ -4,6 +4,7 @@ package com.redcheck.backend.controller;
 import com.redcheck.backend.dto.SubjectArchiveDTO;
 import com.redcheck.backend.dto.request.SubjectRequestDTO;
 import com.redcheck.backend.dto.response.SubjectResponseDTO;
+import com.redcheck.backend.entity.Subject;
 import com.redcheck.backend.entity.User;
 import com.redcheck.backend.service.SubjectService;
 import jakarta.validation.Valid;
@@ -30,6 +31,15 @@ public class SubjectController {
 
         List<SubjectResponseDTO> subjects = subjectService.getAllSubjects(currentUser, archived);
         return ResponseEntity.ok(subjects);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<SubjectResponseDTO> get(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser){
+
+        SubjectResponseDTO response = subjectService.getSubject(id, currentUser);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping
