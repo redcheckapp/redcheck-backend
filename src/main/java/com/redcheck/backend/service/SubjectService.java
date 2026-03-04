@@ -13,11 +13,24 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class SubjectService {
 
     private final SubjectRepository subjectRepository;
+
+    public List<SubjectResponseDTO> getAllSubjects(User currentUser, Boolean archived) {
+        List<Subject> subjects = (archived != null)
+                ? subjectRepository.findAllByUserAndArchived(currentUser, archived)
+                : subjectRepository.findAllByUser(currentUser);
+
+        return subjects.stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
+    }
 
     @Transactional
     public SubjectResponseDTO createSubject(SubjectRequestDTO requestDTO, User currentUser){
