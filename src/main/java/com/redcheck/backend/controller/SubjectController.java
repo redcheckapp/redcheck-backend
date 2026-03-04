@@ -13,6 +13,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/subjects")
 @RequiredArgsConstructor
@@ -20,6 +22,15 @@ import org.springframework.web.bind.annotation.*;
 public class SubjectController {
 
     private final SubjectService subjectService;
+
+    @GetMapping
+    public ResponseEntity<List<SubjectResponseDTO>> getAll(
+            @AuthenticationPrincipal User currentUser,
+            @RequestParam(required = false) Boolean archived) {
+
+        List<SubjectResponseDTO> subjects = subjectService.getAllSubjects(currentUser, archived);
+        return ResponseEntity.ok(subjects);
+    }
 
     @PostMapping
     public ResponseEntity<SubjectResponseDTO> create(
