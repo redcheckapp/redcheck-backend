@@ -69,7 +69,7 @@ public class TaskService {
     }
 
     @Transactional
-    public TaskResponseDTO modifyTask(Long subjectId, Long taskId, TaskRequestDTO requestDTO, User currentUser){
+    public TaskResponseDTO updateTask(Long subjectId, Long taskId, TaskRequestDTO requestDTO, User currentUser){
 
         Task task = getOwnedTask(subjectId, taskId, currentUser);
 
