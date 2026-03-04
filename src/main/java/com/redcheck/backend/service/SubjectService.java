@@ -32,6 +32,16 @@ public class SubjectService {
                 .collect(Collectors.toList());
     }
 
+    public SubjectResponseDTO getSubject(Long id, User currentUser){
+        Subject subject = subjectRepository.findById(id)
+                .orElseThrow(() -> new SubjectNotFoundException(id));
+
+        if(!subject.getUser().getId().equals(currentUser.getId()))
+            throw new SubjectNotOwnedException();
+
+        return toResponseDTO(subject);
+    }
+
     @Transactional
     public SubjectResponseDTO createSubject(SubjectRequestDTO requestDTO, User currentUser){
 
