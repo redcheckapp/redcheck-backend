@@ -1,4 +1,4 @@
-package com.redcheck.backend.dto;
+package com.redcheck.backend.dto.update;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;

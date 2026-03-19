@@ -1,6 +1,6 @@
 package com.redcheck.backend.service;
 
-import com.redcheck.backend.dto.TaskCompleteDTO;
+import com.redcheck.backend.dto.update.TaskCompleteDTO;
 import com.redcheck.backend.dto.request.TaskRequestDTO;
 import com.redcheck.backend.dto.response.TaskResponseDTO;
 import com.redcheck.backend.entity.Subject;

@@ -1,10 +1,9 @@
 package com.redcheck.backend.controller;
 
 
-import com.redcheck.backend.dto.SubjectArchiveDTO;
+import com.redcheck.backend.dto.update.SubjectArchiveDTO;
 import com.redcheck.backend.dto.request.SubjectRequestDTO;
 import com.redcheck.backend.dto.response.SubjectResponseDTO;
-import com.redcheck.backend.entity.Subject;
 import com.redcheck.backend.entity.User;
 import com.redcheck.backend.service.SubjectService;
 import jakarta.validation.Valid;
