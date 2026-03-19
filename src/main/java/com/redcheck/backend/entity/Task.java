@@ -36,6 +36,10 @@ public class Task {
     @JoinColumn(name = "subject_id", nullable = false)
     private Subject subject;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "recurring_task_id", nullable = true)
+    private RecurringTask recurringTask;
+
     @PrePersist
     protected void onCreate() {
         assignedDate = LocalDateTime.now();
