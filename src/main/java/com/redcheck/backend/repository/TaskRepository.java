@@ -23,4 +23,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Modifying
     @Query("UPDATE Task t SET t.recurringTask = null WHERE t.recurringTask = :recurringTask")
     void detachFromRecurringTask(@Param("recurringTask") RecurringTask recurringTask);
+
+    long countBySubjectUserId(Long userId);
+    long countBySubjectUserIdAndCompletedDateIsNotNull(Long userId);
 }
