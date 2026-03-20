@@ -22,7 +22,7 @@ public class RecurringTaskSchedulerService {
     private final TaskRepository taskRepository;
 
     @Transactional
-    @Scheduled(cron = "0 * * * * *") // (cron = "0 0 0 * * *")
+    @Scheduled(cron = "0 0 0 * * *")
     public void generateTask(){
         List<RecurringTask> activeTasks = recurringTaskRepository.findAllByActiveTrue();
 
