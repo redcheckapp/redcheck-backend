@@ -9,4 +9,5 @@ public interface RecurringTaskRepository extends JpaRepository<RecurringTask, Lo
 
     List<RecurringTask> findAllBySubject_User_IdAndActive(Long userId, Boolean active);
     List<RecurringTask> findAllBySubject_User_Id(Long userId);
+    List<RecurringTask> findAllByActiveTrue();
 }
