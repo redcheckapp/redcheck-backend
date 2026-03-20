@@ -9,6 +9,7 @@ import com.redcheck.backend.entity.User;
 import com.redcheck.backend.exception.*;
 import com.redcheck.backend.repository.RecurringTaskRepository;
 import com.redcheck.backend.repository.SubjectRepository;
+import com.redcheck.backend.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ public class RecurringTaskService {
 
     private final RecurringTaskRepository recurringTaskRepository;
     private final SubjectRepository subjectRepository;
+    private final TaskRepository taskRepository;
 
     public List<RecurringTaskResponseDTO> getAllRecurringTask(User currentUser, Long subjectId, Boolean active){
 
@@ -90,6 +92,9 @@ public class RecurringTaskService {
     public void deleteRecurringTask(Long subjectId, Long recurringTaskId, User currentUser){
 
         RecurringTask recurringTask = getOwnedRecurringTask(subjectId, recurringTaskId, currentUser);
+
+        taskRepository.detachFromRecurringTask(recurringTask);
+
         recurringTaskRepository.delete(recurringTask);
     }
 
