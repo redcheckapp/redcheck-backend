@@ -42,6 +42,10 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProgressRecord> progressRecords = new ArrayList<>();
 
+    public String getActualUsername(){
+        return username;
+    }
+
     //This method executes automatically before saving user for the first time
     @PrePersist
     protected void onCreate(){
