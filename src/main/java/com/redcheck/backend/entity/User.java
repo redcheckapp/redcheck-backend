@@ -45,6 +45,9 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProgressRecord> notifications = new ArrayList<>();
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProgressRecord> aiResponses = new ArrayList<>();
+
     public String getActualUsername(){
         return username;
     }
