@@ -13,10 +13,12 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -27,6 +29,17 @@ public class SmartCheckAIService {
     private final TaskRepository taskRepository;
     private final AiResponseRepository aiResponseRepository;
     private final OllamaService ollamaService;
+
+    public String getTodaysAnalysis(User currentUser){
+
+        return aiResponseRepository
+                .findFirstByUserAndTypeOrderByCreatedDateDesc(
+                        currentUser,
+                        AiResponse.Type.DAILY_ANALYSIS)
+                .filter(aiResponse -> aiResponse.getCreatedDate().toLocalDate().equals(LocalDate.now()))
+                .map(AiResponse::getPayload)
+                .orElse(null);
+    }
 
     @Async
     @Transactional
