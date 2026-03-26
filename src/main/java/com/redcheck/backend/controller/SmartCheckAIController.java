@@ -25,6 +25,7 @@ public class SmartCheckAIController {
 
     @PostMapping("/analyze")
     public ResponseEntity<String> dailySmartAnalysis(@AuthenticationPrincipal User currentUser){
+        smartCheckAIService.deleteTodaysAnalysis(currentUser);
         smartCheckAIService.runDailySmartAnalysis(currentUser);
         return ResponseEntity.ok("El análisis ha comenzado en segundo plano. ¡Te notificaremos cuando esté listo!");
     }

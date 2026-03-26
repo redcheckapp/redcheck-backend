@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -38,6 +39,15 @@ public class SmartCheckAIService {
                 .filter(aiResponse -> aiResponse.getCreatedDate().toLocalDate().equals(LocalDate.now()))
                 .map(AiResponse::getPayload)
                 .orElse(null);
+    }
+
+    @Transactional
+    public void deleteTodaysAnalysis(User currentUser){
+        aiResponseRepository
+                .findFirstByUserAndTypeOrderByCreatedDateDesc(
+                        currentUser,
+                        AiResponse.Type.DAILY_ANALYSIS)
+                .ifPresent(aiResponseRepository::delete);
     }
 
     @Async
