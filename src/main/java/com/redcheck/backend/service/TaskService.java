@@ -16,7 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,15 +33,20 @@ public class TaskService {
 
         List<Task> rawTasks;
 
-        if (overdue != null && overdue)
+        if (overdue != null && overdue){
             rawTasks = taskRepository.findAllBySubject_User_IdAndDeadlineBeforeAndCompletedDateIsNull(
                     currentUser.getId(), LocalDateTime.now());
-        else if (completed != null && completed)
+        } else if (completed != null && completed){
             rawTasks = taskRepository.findAllBySubject_User_IdAndCompletedDateIsNotNull(currentUser.getId());
-        else if (completed != null && !completed)
-            rawTasks = taskRepository.findAllBySubject_User_IdAndCompletedDateIsNull(currentUser.getId());
-        else
+        }else if (completed != null && !completed) {
+            LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+            LocalDateTime endOfDay = LocalDate.now().atTime(LocalTime.MAX);
+
+            rawTasks = taskRepository.findPendingOrCompletedToday(
+                    currentUser.getId(), startOfDay, endOfDay);
+        }else {
             rawTasks = taskRepository.findAllBySubject_User_Id(currentUser.getId());
+        }
 
         // At this moment, only subjectId remains in memory, a simple field
         return rawTasks.stream()
