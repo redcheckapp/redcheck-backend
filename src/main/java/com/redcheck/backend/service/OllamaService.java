@@ -26,6 +26,14 @@ public class OllamaService {
         request.put("prompt", prompt);
         request.put("stream", false);
 
+        // Forces JSON output format
+        request.put("format", "json");
+
+        // Advanced options (Temperature)
+        Map<String, Object> options = new HashMap<>();
+        options.put("temperature", 0.2);
+        request.put("options", options);
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
