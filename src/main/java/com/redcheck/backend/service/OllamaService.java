@@ -13,9 +13,9 @@ import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
-public class OllamaService {
+public class OllamaService implements AIService {
 
-    public String askLlama(String prompt){
+    public String ask(String prompt){
         RestTemplate restTemplate = new RestTemplate();
         // Local URL where Ollama is listening
         String url = "http://localhost:11434/api/generate";
