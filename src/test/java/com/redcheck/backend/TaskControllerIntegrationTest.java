@@ -1,13 +1,14 @@
 package com.redcheck.backend;
 
+import com.redcheck.backend.controller.TaskController;
 import com.redcheck.backend.dto.request.TaskRequestDTO;
 import com.redcheck.backend.dto.response.TaskResponseDTO;
 import com.redcheck.backend.dto.update.TaskCompleteDTO;
+import com.redcheck.backend.security.JwtService;
 import com.redcheck.backend.service.TaskService;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -21,15 +22,12 @@ import java.util.Collections;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
-import static org.springframework.test.web.client.match.MockRestRequestMatchers.jsonPath;
+
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
+@WebMvcTest(TaskController.class)
 @DisplayName("Integration Tests - TaskController")
 public class TaskControllerIntegrationTest {
 
@@ -42,8 +40,12 @@ public class TaskControllerIntegrationTest {
     @MockitoBean
     private TaskService taskService;
 
+    @MockitoBean
+    private JwtService jwtService;
+
     private TaskRequestDTO taskRequestDTO;
     private TaskResponseDTO taskResponseDTO;
+    private TaskResponseDTO taskCompletedResponseDTO;
     private TaskCompleteDTO taskCompleteDTO;
 
     @BeforeEach
@@ -61,6 +63,17 @@ public class TaskControllerIntegrationTest {
                 .deadline(LocalDateTime.now().plusDays(3))
                 .completedDate(null)
                 .completed(false)
+                .overdue(false)
+                .subjectId(10L)
+                .build();
+
+        taskCompletedResponseDTO = TaskResponseDTO.builder()
+                .id(1L)
+                .title("New task")
+                .assignedDate(LocalDateTime.now())
+                .deadline(LocalDateTime.now().plusDays(3))
+                .completedDate(LocalDateTime.now())
+                .completed(true)
                 .overdue(false)
                 .subjectId(10L)
                 .build();
@@ -111,6 +124,7 @@ public class TaskControllerIntegrationTest {
 
             // WHEN & THEN:
             mockMvc.perform(post("/subjects/10/tasks")
+                            .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(jsonRequest))
 
@@ -132,6 +146,7 @@ public class TaskControllerIntegrationTest {
 
             // WHEN & THEN:
             mockMvc.perform(post("/subjects/10/tasks")
+                            .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(jsonRequest))
 
@@ -155,6 +170,7 @@ public class TaskControllerIntegrationTest {
 
             // WHEN & THEN:
             mockMvc.perform(put("/subjects/10/tasks/1")
+                            .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(jsonRequest))
 
@@ -172,7 +188,13 @@ public class TaskControllerIntegrationTest {
         @WithMockUser(username = "user@redcheck.com", roles = "USER")
         @DisplayName("When task exists should return success")
         void deleteTask_WhenTaskExists_ShouldReturnSuccess() throws Exception {
+            // GIVEN: deleteTask is void, so we dont need when()
 
+            // WHEN & THEN:
+            mockMvc.perform(delete("/subjects/10/tasks/1")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON))
+                            .andExpect(status().isNoContent());
         }
     }
 
@@ -184,7 +206,20 @@ public class TaskControllerIntegrationTest {
         @WithMockUser(username = "user@redcheck.com", roles = "USER")
         @DisplayName("Mark as completed should return ok status")
         void markTaskAsCompleted_ShouldReturnOkStatus() throws Exception {
+            // GIVEN:
+            when(taskService.markTaskAsCompleted(eq(10L), any(), any(TaskCompleteDTO.class), any()))
+                    .thenReturn(taskCompletedResponseDTO);
 
+            String jsonRequest = objectMapper.writeValueAsString(taskCompleteDTO);
+
+            // WHEN & THEN:
+            mockMvc.perform(patch("/subjects/10/tasks/1/complete")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(jsonRequest))
+
+                            .andExpect(status().isOk())
+                            .andExpect(MockMvcResultMatchers.jsonPath("$.completed").value(true));
         }
     }
 }
