@@ -16,3 +16,11 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
+
+ai:
+  provider: gemini
+
+gemini:
+  api:
+    key: "AIzaSyD1LA_LK423BaDXRekzETN7AhBAqx75poo"
+  model: gemini-2.5-flash
