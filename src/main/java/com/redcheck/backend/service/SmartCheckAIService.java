@@ -28,7 +28,7 @@ public class SmartCheckAIService {
     private final NotificationRepository notificationRepository;
     private final TaskRepository taskRepository;
     private final AiResponseRepository aiResponseRepository;
-    private final OllamaService ollamaService;
+    private final AIService aiService;
 
     public String getTodaysAnalysis(User currentUser){
 
@@ -108,7 +108,7 @@ public class SmartCheckAIService {
                             "  ]\n" +
                             "}";
 
-            String aiResponseJson = ollamaService.askLlama(prompt);
+            String aiResponseJson = aiService.ask(prompt);
             AiResponse aiResponse = AiResponse.builder()
                     .type(AiResponse.Type.DAILY_ANALYSIS)
                     .payload(aiResponseJson)
