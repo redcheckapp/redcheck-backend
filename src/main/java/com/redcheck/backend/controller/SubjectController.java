@@ -32,15 +32,6 @@ public class SubjectController {
         return ResponseEntity.ok(subjects);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<SubjectResponseDTO> get(
-            @PathVariable Long id,
-            @AuthenticationPrincipal User currentUser){
-
-        SubjectResponseDTO response = subjectService.getSubject(id, currentUser);
-        return ResponseEntity.ok(response);
-    }
-
     @PostMapping
     public ResponseEntity<SubjectResponseDTO> create(
             @Valid @RequestBody SubjectRequestDTO requestDTO,
