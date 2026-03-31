@@ -41,12 +41,6 @@ public class RecurringTaskService {
                 .collect(Collectors.toList());
     }
 
-    public RecurringTaskResponseDTO getRecurringTaskById(User currentUser, Long subjectId, Long id){
-
-        RecurringTask recurringTask = getOwnedRecurringTask(subjectId, id, currentUser);
-        return toResponseDTO(recurringTask);
-    }
-
     @Transactional
     public RecurringTaskResponseDTO createRecurringTask(Long subjectId, RecurringTaskRequestDTO requestDTO, User currentUser){
 

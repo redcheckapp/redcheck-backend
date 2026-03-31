@@ -32,16 +32,6 @@ public class RecurringTaskController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<RecurringTaskResponseDTO> getById(
-            @AuthenticationPrincipal User currentUser,
-            @PathVariable Long subjectId,
-            @PathVariable Long id){
-
-        RecurringTaskResponseDTO response = recurringTaskService.getRecurringTaskById(currentUser, subjectId, id);
-        return ResponseEntity.ok(response);
-    }
-
     @PostMapping
     public ResponseEntity<RecurringTaskResponseDTO> create(
             @PathVariable Long subjectId,
