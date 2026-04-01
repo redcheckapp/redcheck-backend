@@ -10,7 +10,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class AIConfig {
 
-    @Value("${ai.provider:gemini}")
+    @Value("${ai.provider:}")
     private String provider;
 
     @Bean

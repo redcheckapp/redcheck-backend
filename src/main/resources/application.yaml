@@ -22,5 +22,5 @@ ai:
 
 gemini:
   api:
-    key: "AIzaSyD1LA_LK423BaDXRekzETN7AhBAqx75poo"
+    key: ${GEMINI_API_KEY}
   model: gemini-2.5-flash
