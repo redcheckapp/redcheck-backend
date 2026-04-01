@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -41,14 +43,24 @@ public class ProgressRecordService {
 
     @Transactional
     public void generateDailyRecord(User user){
-        if(progressRecordRepository.existsByUserAndDate(user, LocalDate.now())) return;
+        LocalDate today = LocalDate.now();
 
-        long total = taskRepository.countBySubjectUserId(user.getId());
-        long completed = taskRepository.countBySubjectUserIdAndCompletedDateIsNotNull(user.getId());
+        if(progressRecordRepository.existsByUserAndDate(user, today)) return;
+
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime endOfDay = today.atTime(LocalTime.MAX);
+
+        long completedToday = taskRepository.countBySubjectUserIdAndCompletedDateBetween(
+                user.getId(), startOfDay, endOfDay);
+
+        long pendingRightNow = taskRepository.countBySubjectUserIdAndCompletedDateIsNull(user.getId());
+
+        long totalForToday = completedToday + pendingRightNow;
 
         ProgressRecord progressRecord = ProgressRecord.builder()
-                .totalTasks((int) total)
-                .completedTasks((int) completed)
+                .totalTasks((int) totalForToday)
+                .completedTasks((int) completedToday)
+                .date(today)
                 .user(user)
                 .build();
 

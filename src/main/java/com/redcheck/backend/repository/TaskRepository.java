@@ -34,4 +34,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     long countBySubjectUserId(Long userId);
     long countBySubjectUserIdAndCompletedDateIsNotNull(Long userId);
+
+    long countBySubjectUserIdAndCompletedDateBetween(Long userId, LocalDateTime startOfDay, LocalDateTime endOfDay);
+    long countBySubjectUserIdAndCompletedDateIsNull(Long userId);
 }

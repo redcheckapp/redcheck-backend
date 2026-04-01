@@ -14,8 +14,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.ArgumentCaptor;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -149,8 +151,11 @@ public class ProgressRecordServiceTest {
 
             // THEN
             verify(progressRecordRepository, times(1)).existsByUserAndDate(eq(user), any(LocalDate.class));
-            verify(taskRepository, never()).countBySubjectUserId(anyLong());
-            verify(taskRepository, never()).countBySubjectUserIdAndCompletedDateIsNotNull(anyLong());
+
+            // Verificamos que no se llama a los nuevos métodos del repositorio
+            verify(taskRepository, never()).countBySubjectUserIdAndCompletedDateBetween(anyLong(), any(), any());
+            verify(taskRepository, never()).countBySubjectUserIdAndCompletedDateIsNull(anyLong());
+
             verify(progressRecordRepository, never()).save(any(ProgressRecord.class));
         }
 
@@ -161,17 +166,31 @@ public class ProgressRecordServiceTest {
             when(progressRecordRepository.existsByUserAndDate(eq(user), any(LocalDate.class)))
                     .thenReturn(false);
 
-            when(taskRepository.countBySubjectUserId(user.getId())).thenReturn(8L);
-            when(taskRepository.countBySubjectUserIdAndCompletedDateIsNotNull(user.getId())).thenReturn(3L);
+            when(taskRepository.countBySubjectUserIdAndCompletedDateBetween(
+                    eq(user.getId()), any(LocalDateTime.class), any(LocalDateTime.class)))
+                    .thenReturn(2L);
+
+            when(taskRepository.countBySubjectUserIdAndCompletedDateIsNull(user.getId()))
+                    .thenReturn(4L);
 
             // WHEN
             progressRecordService.generateDailyRecord(user);
 
             // THEN
             verify(progressRecordRepository, times(1)).existsByUserAndDate(eq(user), any(LocalDate.class));
-            verify(taskRepository, times(1)).countBySubjectUserId(user.getId());
-            verify(taskRepository, times(1)).countBySubjectUserIdAndCompletedDateIsNotNull(user.getId());
-            verify(progressRecordRepository, times(1)).save(any(ProgressRecord.class)); // Verificamos que se guarda
+            verify(taskRepository, times(1)).countBySubjectUserIdAndCompletedDateBetween(
+                    eq(user.getId()), any(LocalDateTime.class), any(LocalDateTime.class));
+            verify(taskRepository, times(1)).countBySubjectUserIdAndCompletedDateIsNull(user.getId());
+
+            ArgumentCaptor<ProgressRecord> recordCaptor = ArgumentCaptor.forClass(ProgressRecord.class);
+            verify(progressRecordRepository, times(1)).save(recordCaptor.capture());
+
+            ProgressRecord savedRecord = recordCaptor.getValue();
+
+            assertEquals(6, savedRecord.getTotalTasks());
+            assertEquals(2, savedRecord.getCompletedTasks());
+            assertNotNull(savedRecord.getDate());
+            assertEquals(user, savedRecord.getUser());
         }
     }
 }
