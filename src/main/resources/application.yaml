@@ -16,12 +16,6 @@ spring:
       hibernate:
         format_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
-      jakarta:
-        persistence:
-          schema-generation:
-            scripts:
-              action: create
-              create-target: src/main/resources/schema-generado.sql
 
 ai:
   provider: gemini
