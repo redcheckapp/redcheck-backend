@@ -5,6 +5,7 @@ import com.redcheck.backend.dto.request.RegisterRequestDTO;
 import com.redcheck.backend.dto.response.AuthResponseDTO;
 import com.redcheck.backend.service.AuthService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -17,8 +18,12 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponseDTO> register(@RequestBody RegisterRequestDTO requestDTO){
-        return ResponseEntity.ok(authService.register(requestDTO));
+    public ResponseEntity<?> register(@RequestBody RegisterRequestDTO requestDTO){
+        // User registration temporary blocked for demo purposes
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body("El registro de nuevos usuarios está deshabilitado en la versión de demostración.");
+        //return ResponseEntity.ok(authService.register(requestDTO));
     }
 
     @PostMapping("/login")
