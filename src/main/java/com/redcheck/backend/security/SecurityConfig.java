@@ -1,6 +1,7 @@
 package com.redcheck.backend.security;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -23,11 +24,14 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
 
+    // Inyectamos los orígenes permitidos. Si no hay variable de entorno, usa localhost por defecto.
+    @Value("${cors.allowed-origins:http://localhost,http://localhost:5173}")
+    private List<String> allowedOrigins;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(AbstractHttpConfigurer::disable) // Disables CSRF, we use JWT (Stateless)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Development phase ---> TODO: Delete when its finished
-                .csrf(csrf -> csrf.disable()) // Development phase ---> TODO: Delete when its finished
+        http.csrf(AbstractHttpConfigurer::disable) // Desactivamos CSRF porque usamos tokens JWT (Stateless)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         // Public paths
                         .requestMatchers(
@@ -47,14 +51,10 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // Development phase ---> TODO: Delete when its finished
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(
-                "http://localhost",       // localhost port (80)
-                "http://localhost:5173"   // Vite port (optional)
-        ));
+        configuration.setAllowedOrigins(allowedOrigins); // Lista inyectada dinámicamente
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
