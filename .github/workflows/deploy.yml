@@ -18,9 +18,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # Execution of all JUnit tests
-      - name: Execute Tests
-        run: mvn clean test
+      # Builds .jar and runs tests
+      - name: Build Project and Run Tests
+        run: mvn clean package
 
       - name: Login into Docker Hub
         uses: docker/login-action@v2
