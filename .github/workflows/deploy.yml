@@ -1,9 +1,9 @@
 name: CI/CD Backend Pipeline
 
-# This pipeline executes each time we push something into demo branch
+# This pipeline executes each time we push something into main branch
 on:
   push:
-    branches: ["demo"]
+    branches: ["main"]
 
 jobs:
   build-and-push:
