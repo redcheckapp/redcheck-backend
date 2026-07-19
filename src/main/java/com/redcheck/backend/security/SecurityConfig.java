@@ -1,6 +1,7 @@
 package com.redcheck.backend.security;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -12,6 +13,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource; // Importante añadir esto
 
 import java.util.List;
 
@@ -23,11 +25,14 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
 
+    // Inyectamos los orígenes. En local usará Vite/Tomcat por defecto.
+    @Value("${cors.allowed-origins:http://localhost:5173,http://localhost:8080}")
+    private List<String> allowedOrigins;
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http.csrf(AbstractHttpConfigurer::disable) // Disables CSRF, we use JWT (Stateless)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Development phase ---> TODO: Delete when its finished
-                .csrf(csrf -> csrf.disable()) // Development phase ---> TODO: Delete when its finished
+        http.csrf(AbstractHttpConfigurer::disable) // Stateless JWT
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         // Public paths
                         .requestMatchers(
@@ -36,7 +41,7 @@ public class SecurityConfig {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
                         ).permitAll()
-                        // Protected paths (logged users only)
+                        // Protected paths
                         .requestMatchers("/users/**").authenticated()
                         .anyRequest().authenticated()
                 )
@@ -47,17 +52,18 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // Development phase ---> TODO: Delete when its finished
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(List.of(
-                "http://localhost",       // localhost port (80)
-                "http://localhost:5173"   // Vite port (optional)
-        ));
+        configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
+        // Al estar a true, Spring prohíbe estrictamente que 'allowedOrigins' contenga "*"
         configuration.setAllowCredentials(true);
-        return request -> configuration;
+
+        // Registramos la configuración explícitamente para todos los endpoints
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }

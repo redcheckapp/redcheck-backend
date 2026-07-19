@@ -4,6 +4,7 @@ import com.redcheck.backend.dto.response.UserResponseDTO;
 import com.redcheck.backend.entity.User;
 import com.redcheck.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,15 +23,22 @@ public class UserController {
     public ResponseEntity<UserResponseDTO> getUsername(@AuthenticationPrincipal User currentUser){
         UserResponseDTO responseDTO = UserResponseDTO.builder()
                 .username(currentUser.getActualUsername())
+                .email(currentUser.getEmail())
                 .build();
         return ResponseEntity.ok(responseDTO);
     }
 
     @DeleteMapping("/me")
-    public ResponseEntity<Void> deleteMyAccount(){
+    public ResponseEntity<?> deleteMyAccount(){
         // We obtain the authenticated user via security context
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User currentUser = (User) authentication.getPrincipal();
+
+        if("demo@redcheck.com".equalsIgnoreCase(currentUser.getEmail())){
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body("{\"error\": \"Acción denegada. La cuenta de demostración no puede ser eliminada.\"}");
+        }
 
         userService.deleteUser(currentUser.getEmail());
 
