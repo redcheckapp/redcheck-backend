@@ -65,8 +65,6 @@ public class AuthControllerIntegrationTest {
                 .build();
     }
 
-    /*
-
     @Nested
     @DisplayName("Endpoint: POST /auth/register")
     class RegisterTests {
@@ -90,8 +88,6 @@ public class AuthControllerIntegrationTest {
                     .andExpect(MockMvcResultMatchers.jsonPath("$.token").value(MOCK_TOKEN));
         }
     }
-
-     */
 
     @Nested
     @DisplayName("Endpoint: POST /auth/login")

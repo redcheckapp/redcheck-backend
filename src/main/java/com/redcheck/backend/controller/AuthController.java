@@ -19,11 +19,7 @@ public class AuthController {
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody RegisterRequestDTO requestDTO){
-        // User registration temporary blocked for demo purposes
-        return ResponseEntity
-                .status(HttpStatus.FORBIDDEN)
-                .body("El registro de nuevos usuarios está deshabilitado en la versión de demostración.");
-        //return ResponseEntity.ok(authService.register(requestDTO));
+        return ResponseEntity.ok(authService.register(requestDTO));
     }
 
     @PostMapping("/login")
