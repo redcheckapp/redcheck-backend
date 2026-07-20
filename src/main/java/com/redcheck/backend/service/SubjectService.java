@@ -145,6 +145,7 @@ public class SubjectService {
                 .name(subject.getName())
                 .description(subject.getDescription())
                 .archived(subject.isArchived())
+                .deleted(subject.isDeleted())
                 .build();
     }
 }

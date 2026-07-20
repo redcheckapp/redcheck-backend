@@ -14,5 +14,6 @@ public class SubjectResponseDTO {
     private Long id;
     private String name;
     private String description;
+    private boolean deleted;
     private boolean archived;
 }

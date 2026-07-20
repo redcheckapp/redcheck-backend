@@ -170,6 +170,7 @@ public class TaskService {
                 .deadline(task.getDeadline())
                 .completedDate(task.getCompletedDate())
                 .completed(task.getCompletedDate() != null)
+                .deleted(task.isDeleted())
                 .overdue(isOverdue)
                 .subjectId(task.getSubject().getId())
                 .build();

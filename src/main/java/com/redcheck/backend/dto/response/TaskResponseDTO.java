@@ -19,6 +19,7 @@ public class TaskResponseDTO {
     private LocalDateTime assignedDate;
     private LocalDateTime deadline;
     private LocalDateTime completedDate;
+    private boolean deleted;
     private boolean completed;
     private boolean overdue;
     private Long subjectId;
