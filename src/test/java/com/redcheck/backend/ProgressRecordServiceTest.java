@@ -153,8 +153,8 @@ public class ProgressRecordServiceTest {
             verify(progressRecordRepository, times(1)).existsByUserAndDate(eq(user), any(LocalDate.class));
 
             // Verificamos que no se llama a los nuevos métodos del repositorio
-            verify(taskRepository, never()).countBySubjectUserIdAndCompletedDateBetween(anyLong(), any(), any());
-            verify(taskRepository, never()).countBySubjectUserIdAndCompletedDateIsNull(anyLong());
+            verify(taskRepository, never()).countBySubjectUserIdAndCompletedDateBetweenAndDeletedFalse(anyLong(), any(), any());
+            verify(taskRepository, never()).countBySubjectUserIdAndCompletedDateIsNullAndDeletedFalse(anyLong());
 
             verify(progressRecordRepository, never()).save(any(ProgressRecord.class));
         }
@@ -166,11 +166,11 @@ public class ProgressRecordServiceTest {
             when(progressRecordRepository.existsByUserAndDate(eq(user), any(LocalDate.class)))
                     .thenReturn(false);
 
-            when(taskRepository.countBySubjectUserIdAndCompletedDateBetween(
+            when(taskRepository.countBySubjectUserIdAndCompletedDateBetweenAndDeletedFalse(
                     eq(user.getId()), any(LocalDateTime.class), any(LocalDateTime.class)))
                     .thenReturn(2L);
 
-            when(taskRepository.countBySubjectUserIdAndCompletedDateIsNull(user.getId()))
+            when(taskRepository.countBySubjectUserIdAndCompletedDateIsNullAndDeletedFalse(user.getId()))
                     .thenReturn(4L);
 
             // WHEN
@@ -178,9 +178,9 @@ public class ProgressRecordServiceTest {
 
             // THEN
             verify(progressRecordRepository, times(1)).existsByUserAndDate(eq(user), any(LocalDate.class));
-            verify(taskRepository, times(1)).countBySubjectUserIdAndCompletedDateBetween(
+            verify(taskRepository, times(1)).countBySubjectUserIdAndCompletedDateBetweenAndDeletedFalse(
                     eq(user.getId()), any(LocalDateTime.class), any(LocalDateTime.class));
-            verify(taskRepository, times(1)).countBySubjectUserIdAndCompletedDateIsNull(user.getId());
+            verify(taskRepository, times(1)).countBySubjectUserIdAndCompletedDateIsNullAndDeletedFalse(user.getId());
 
             ArgumentCaptor<ProgressRecord> recordCaptor = ArgumentCaptor.forClass(ProgressRecord.class);
             verify(progressRecordRepository, times(1)).save(recordCaptor.capture());

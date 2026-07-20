@@ -1,5 +1,6 @@
 package com.redcheck.backend.controller;
 
+import com.redcheck.backend.dto.response.SubjectResponseDTO;
 import com.redcheck.backend.dto.update.TaskCompleteDTO;
 import com.redcheck.backend.dto.request.TaskRequestDTO;
 import com.redcheck.backend.dto.response.TaskResponseDTO;
@@ -28,9 +29,10 @@ public class TaskController {
             @AuthenticationPrincipal User currentUser,
             @PathVariable Long subjectId,
             @RequestParam(required = false) Boolean completed,
-            @RequestParam(required = false) Boolean overdue){
+            @RequestParam(required = false) Boolean overdue,
+            @RequestParam(required = false) Boolean deleted){
 
-        List<TaskResponseDTO> response = taskService.getAllTask(currentUser, subjectId, completed, overdue);
+        List<TaskResponseDTO> response = taskService.getAllTask(currentUser, subjectId, completed, overdue, deleted);
         return ResponseEntity.ok(response);
     }
 
@@ -63,6 +65,26 @@ public class TaskController {
 
         taskService.deleteTask(subjectId, taskId, currentUser);
         return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{taskId}/force")
+    public ResponseEntity<Void> hardDelete(
+            @PathVariable Long subjectId,
+            @PathVariable Long taskId,
+            @AuthenticationPrincipal User currentUser){
+
+        taskService.hardDeleteTask(subjectId, taskId, currentUser);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("{taskId}/restore")
+    public ResponseEntity<TaskResponseDTO> restore(
+            @PathVariable Long subjectId,
+            @PathVariable Long taskId,
+            @AuthenticationPrincipal User currentUser){
+
+        TaskResponseDTO responseDTO = taskService.restoreTask(subjectId, taskId, currentUser);
+        return ResponseEntity.ok(responseDTO);
     }
 
     @PatchMapping("/{taskId}/complete")

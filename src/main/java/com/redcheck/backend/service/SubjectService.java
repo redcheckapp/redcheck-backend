@@ -13,6 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,10 +23,19 @@ public class SubjectService {
 
     private final SubjectRepository subjectRepository;
 
-    public List<SubjectResponseDTO> getAllSubjects(User currentUser, Boolean archived) {
-        List<Subject> subjects = (archived != null)
-                ? subjectRepository.findAllByUserAndArchived(currentUser, archived)
-                : subjectRepository.findAllByUser(currentUser);
+    public List<SubjectResponseDTO> getAllSubjects(User currentUser, Boolean archived, Boolean deleted) {
+        List<Subject> subjects;
+
+        // 1. If the trash is explicitly requested
+        if (deleted != null && deleted) {
+            subjects = subjectRepository.findAllByUserAndDeletedTrue(currentUser);
+        }
+        // 2. Normal filters (ensuring trash is excluded with AndDeletedFalse)
+        else if (archived != null) {
+            subjects = subjectRepository.findAllByUserAndArchivedAndDeletedFalse(currentUser, archived);
+        } else {
+            subjects = subjectRepository.findAllByUserAndDeletedFalse(currentUser);
+        }
 
         return subjects.stream()
                 .map(this::toResponseDTO)
@@ -79,7 +89,38 @@ public class SubjectService {
         if(!subject.getUser().getId().equals(currentUser.getId()))
             throw new SubjectNotOwnedException();
 
+        subject.setDeleted(true);
+        subject.setDeletedAt(LocalDateTime.now());
+        subjectRepository.save(subject);
+    }
+
+    @Transactional
+    public void hardDeleteSubject(Long id, User currentUser){
+        Subject subject = subjectRepository.findById(id)
+                .orElseThrow(() -> new SubjectNotFoundException(id));
+
+        if(!subject.getUser().getId().equals(currentUser.getId()))
+            throw new SubjectNotOwnedException();
+
+        if(!subject.isDeleted())
+            throw new IllegalStateException("The subject must be in the recycle bin in order to be deleted");
+
         subjectRepository.delete(subject);
+    }
+
+    @Transactional
+    public SubjectResponseDTO restoreSubject(Long id, User currentUser){
+        Subject subject = subjectRepository.findById(id)
+                .orElseThrow(() -> new SubjectNotFoundException(id));
+
+        if(!subject.getUser().getId().equals(currentUser.getId()))
+            throw new SubjectNotOwnedException();
+
+        subject.setDeleted(false);
+        subject.setDeletedAt(null);
+        subjectRepository.save(subject);
+
+        return toResponseDTO(subject);
     }
 
     @Transactional

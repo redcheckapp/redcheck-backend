@@ -56,7 +56,7 @@ public class SmartCheckAIService {
         try{
 
             // Look for this user's uncompleted tasks
-            List<Task> pendingTasks = taskRepository.findAllBySubject_User_IdAndCompletedDateIsNull(currentUser.getId());
+            List<Task> pendingTasks = taskRepository.findAllBySubject_User_IdAndCompletedDateIsNullAndDeletedFalse(currentUser.getId());
 
             ObjectMapper objectMapper = new ObjectMapper();
 

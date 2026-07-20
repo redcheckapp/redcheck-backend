@@ -26,10 +26,11 @@ public class SubjectController {
     @GetMapping
     public ResponseEntity<List<SubjectResponseDTO>> getAll(
             @AuthenticationPrincipal User currentUser,
-            @RequestParam(required = false) Boolean archived) {
+            @RequestParam(required = false) Boolean archived,
+            @RequestParam(required = false) Boolean deleted) {
 
-        List<SubjectResponseDTO> subjects = subjectService.getAllSubjects(currentUser, archived);
-        return ResponseEntity.ok(subjects);
+        List<SubjectResponseDTO> response = subjectService.getAllSubjects(currentUser, archived, deleted);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping
@@ -58,6 +59,24 @@ public class SubjectController {
 
         subjectService.deleteSubject(id, currentUser);
         return ResponseEntity.noContent().build();
+    }
+
+    @DeleteMapping("/{id}/force")
+    public ResponseEntity<Void> hardDelete(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser){
+
+        subjectService.hardDeleteSubject(id, currentUser);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("{id}/restore")
+    public ResponseEntity<SubjectResponseDTO> restore(
+            @PathVariable Long id,
+            @AuthenticationPrincipal User currentUser){
+
+        SubjectResponseDTO responseDTO = subjectService.restoreSubject(id, currentUser);
+        return ResponseEntity.ok(responseDTO);
     }
 
     @PatchMapping("/{id}/archive")

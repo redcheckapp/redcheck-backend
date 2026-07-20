@@ -54,7 +54,7 @@ public class RecurringTaskSchedulerService {
 
             // Searches the latest generated task associated
             Optional<Task> lastTask = taskRepository
-                    .findTopByRecurringTaskOrderByAssignedDateDesc(recurringTask);
+                    .findTopByRecurringTaskAndDeletedFalseOrderByAssignedDateDesc(recurringTask);
 
             // If it exists and its not completed, updates the date but not generates
             if (lastTask.isPresent() && lastTask.get().getCompletedDate() == null) {

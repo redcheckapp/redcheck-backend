@@ -101,18 +101,17 @@ class TaskServiceTest {
         @DisplayName("When no filters applied should return all tasks")
         void getAllTask_WhenNoFiltersApplied_ShouldReturnAllTasks() {
             // GIVEN: Repository returns a list of tasks for the current user
-            when(taskRepository.findAllBySubject_User_Id(user.getId()))
+            when(taskRepository.findAllBySubject_User_IdAndDeletedFalse(user.getId()))
                     .thenReturn(Collections.singletonList(mockTask));
 
             // WHEN: Fetching tasks without overdue or completed filters
-            List<TaskResponseDTO> result = taskService.getAllTask(user, mockSubject.getId(), null, null);
+            List<TaskResponseDTO> result = taskService.getAllTask(user, mockSubject.getId(), null, null, null);
 
             // THEN: The list should contain the mapped DTO
             assertFalse(result.isEmpty());
             assertEquals(1, result.size());
             assertEquals(mockTask.getId(), result.get(0).getId());
-            verify(taskRepository, times(1)).findAllBySubject_User_Id(user.getId());
-        }
+            verify(taskRepository, times(1)).findAllBySubject_User_IdAndDeletedFalse(user.getId());        }
     }
 
     @Nested
@@ -228,26 +227,79 @@ class TaskServiceTest {
     }
 
     @Nested
-    @DisplayName("Method: deleteTask")
+    @DisplayName("Method: deleteTask (Soft Delete)")
     class DeleteTaskTest {
 
         @Test
-        @DisplayName("When task is owned should delete task")
-        void deleteTask_WhenTaskIsOwned_ShouldDeleteTask() {
-            // GIVEN: Subject exists and belongs to the current user with one associated task
+        @DisplayName("When task is owned should soft delete task")
+        void deleteTask_WhenTaskIsOwned_ShouldSoftDeleteTask() {
+            // GIVEN
             when(subjectRepository.findById(mockSubject.getId()))
                     .thenReturn(Optional.ofNullable(mockSubject));
 
             when(taskRepository.findById(mockTask.getId()))
                     .thenReturn(Optional.ofNullable(mockTask));
 
-            // WHEN: Deleting the task
+            // WHEN
             taskService.deleteTask(mockSubject.getId(), mockTask.getId(), user);
 
-            // THEN: The task properties should be updated and saved
+            // THEN: verify it was saved with deleted flag and timestamp, NOT hard deleted
             verify(subjectRepository, times(1)).findById(mockSubject.getId());
             verify(taskRepository, times(1)).findById(mockTask.getId());
-            verify(taskRepository, times(1)).delete(any(Task.class));
+
+            assertTrue(mockTask.isDeleted());
+            assertNotNull(mockTask.getDeletedAt());
+
+            verify(taskRepository, times(1)).save(mockTask);
+            verify(taskRepository, never()).delete(any(Task.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("Method: restoreTask")
+    class RestoreTaskTest {
+
+        @Test
+        @DisplayName("When task is owned should restore task from trash")
+        void restoreTask_WhenTaskIsOwned_ShouldRestoreTask() {
+            // GIVEN: A task that is currently deleted
+            mockTask.setDeleted(true);
+            mockTask.setDeletedAt(LocalDateTime.now().minusHours(2));
+
+            when(subjectRepository.findById(mockSubject.getId()))
+                    .thenReturn(Optional.ofNullable(mockSubject));
+            when(taskRepository.findById(mockTask.getId()))
+                    .thenReturn(Optional.ofNullable(mockTask));
+
+            // WHEN
+            TaskResponseDTO result = taskService.restoreTask(mockSubject.getId(), mockTask.getId(), user);
+
+            // THEN
+            assertNotNull(result);
+            assertFalse(mockTask.isDeleted());
+            assertNull(mockTask.getDeletedAt());
+
+            verify(taskRepository, times(1)).save(mockTask);
+        }
+    }
+
+    @Nested
+    @DisplayName("Method: hardDeleteTask")
+    class HardDeleteTaskTest {
+
+        @Test
+        @DisplayName("When task is owned should permanently delete task")
+        void hardDeleteTask_WhenTaskIsOwned_ShouldPermanentlyDelete() {
+            // GIVEN
+            mockTask.setDeleted(true);
+            when(subjectRepository.findById(10L)).thenReturn(Optional.of(mockSubject));
+            when(taskRepository.findById(100L)).thenReturn(Optional.of(mockTask));
+
+            // WHEN
+            taskService.hardDeleteTask(10L, 100L, user);
+
+            // THEN
+            verify(taskRepository, times(1)).delete(mockTask);
         }
     }
 

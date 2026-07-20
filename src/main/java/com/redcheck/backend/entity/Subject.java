@@ -3,6 +3,7 @@ package com.redcheck.backend.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,6 +25,12 @@ public class Subject {
     private String description;
 
     private boolean archived = false;
+
+    @Column(nullable = false)
+    private boolean deleted = false;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude

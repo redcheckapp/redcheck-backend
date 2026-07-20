@@ -50,10 +50,10 @@ public class ProgressRecordService {
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime endOfDay = today.atTime(LocalTime.MAX);
 
-        long completedToday = taskRepository.countBySubjectUserIdAndCompletedDateBetween(
+        long completedToday = taskRepository.countBySubjectUserIdAndCompletedDateBetweenAndDeletedFalse(
                 user.getId(), startOfDay, endOfDay);
 
-        long pendingRightNow = taskRepository.countBySubjectUserIdAndCompletedDateIsNull(user.getId());
+        long pendingRightNow = taskRepository.countBySubjectUserIdAndCompletedDateIsNullAndDeletedFalse(user.getId());
 
         long totalForToday = completedToday + pendingRightNow;
 

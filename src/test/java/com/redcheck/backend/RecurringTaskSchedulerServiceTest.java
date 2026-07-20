@@ -97,7 +97,7 @@ public class RecurringTaskSchedulerServiceTest {
             when(recurringTaskRepository.findAllByActiveTrue())
                     .thenReturn(Collections.singletonList(mockRecurringTask));
 
-            when(taskRepository.findTopByRecurringTaskOrderByAssignedDateDesc(mockRecurringTask))
+            when(taskRepository.findTopByRecurringTaskAndDeletedFalseOrderByAssignedDateDesc(mockRecurringTask))
                     .thenReturn(Optional.of(mockIncompleteTask));
 
             // WHEN
@@ -117,7 +117,7 @@ public class RecurringTaskSchedulerServiceTest {
             when(recurringTaskRepository.findAllByActiveTrue())
                     .thenReturn(Collections.singletonList(mockRecurringTask));
 
-            when(taskRepository.findTopByRecurringTaskOrderByAssignedDateDesc(mockRecurringTask))
+            when(taskRepository.findTopByRecurringTaskAndDeletedFalseOrderByAssignedDateDesc(mockRecurringTask))
                     .thenReturn(Optional.of(mockCompleteTask));
 
             // WHEN:

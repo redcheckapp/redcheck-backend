@@ -54,3 +54,4 @@ Thumbs.db
 .env.local
 application-local.yml
 application-local.properties
+.aider*

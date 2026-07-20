@@ -19,6 +19,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -82,17 +83,17 @@ public class SubjectServiceTest {
         @DisplayName("When no filter applied should return all subjects")
         void getAllSubjects_WhenNoFilterApplied_ShouldReturnAllSujects() {
             // GIVEN
-            when(subjectRepository.findAllByUser(user))
+            when(subjectRepository.findAllByUserAndDeletedFalse(user))
                     .thenReturn(Collections.singletonList(mockSubject));
 
             // WHEN
-            List<SubjectResponseDTO> result = subjectService.getAllSubjects(user, null);
+            List<SubjectResponseDTO> result = subjectService.getAllSubjects(user, null, null);
 
             // THEN
             assertFalse(result.isEmpty());
             assertEquals(1, result.size());
             assertEquals(mockSubject.getId(), result.get(0).getId());
-            verify(subjectRepository, times(1)).findAllByUser(user);
+            verify(subjectRepository, times(1)).findAllByUserAndDeletedFalse(user);
         }
     }
 
@@ -200,12 +201,12 @@ public class SubjectServiceTest {
     }
 
     @Nested
-    @DisplayName("Method: deleteSubject")
+    @DisplayName("Method: deleteSubject (Soft Delete)")
     class DeleteSubjectTests {
 
         @Test
-        @DisplayName("When subject is owned should delete subject")
-        void deleteSubject_WhenSubjectIsOwned_ShouldDeleteSubject() {
+        @DisplayName("When subject is owned should soft delete subject")
+        void deleteSubject_WhenSubjectIsOwned_ShouldSoftDeleteSubject() {
             // GIVEN
             when(subjectRepository.findById(mockSubject.getId()))
                     .thenReturn(Optional.of(mockSubject));
@@ -214,8 +215,58 @@ public class SubjectServiceTest {
             subjectService.deleteSubject(mockSubject.getId(), user);
 
             // THEN
+            assertTrue(mockSubject.isDeleted());
+            assertNotNull(mockSubject.getDeletedAt());
+
             verify(subjectRepository, times(1)).findById(mockSubject.getId());
-            verify(subjectRepository, times(1)).delete(any(Subject.class));
+            verify(subjectRepository, times(1)).save(mockSubject);
+            verify(subjectRepository, never()).delete(any(Subject.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("Method: restoreSubject")
+    class RestoreSubjectTests {
+
+        @Test
+        @DisplayName("When subject is owned should restore subject from trash")
+        void restoreSubject_WhenSubjectIsOwned_ShouldRestoreSubject() {
+            // GIVEN
+            mockSubject.setDeleted(true);
+            mockSubject.setDeletedAt(LocalDateTime.now().minusHours(5));
+
+            when(subjectRepository.findById(mockSubject.getId()))
+                    .thenReturn(Optional.of(mockSubject));
+
+            // WHEN
+            SubjectResponseDTO result = subjectService.restoreSubject(mockSubject.getId(), user);
+
+            // THEN
+            assertNotNull(result);
+            assertFalse(mockSubject.isDeleted());
+            assertNull(mockSubject.getDeletedAt());
+
+            verify(subjectRepository, times(1)).save(mockSubject);
+        }
+    }
+
+    @Nested
+    @DisplayName("Method: hardDeleteSubject")
+    class HardDeleteSubjectTests {
+
+        @Test
+        @DisplayName("When subject is owned should permanently delete subject")
+        void hardDeleteSubject_WhenSubjectIsOwned_ShouldPermanentlyDelete() {
+            // GIVEN
+            when(subjectRepository.findById(mockSubject.getId()))
+                    .thenReturn(Optional.of(mockSubject));
+            mockSubject.setDeleted(true);
+
+            // WHEN
+            subjectService.hardDeleteSubject(mockSubject.getId(), user);
+
+            // THEN
+            verify(subjectRepository, times(1)).delete(mockSubject);
         }
     }
 

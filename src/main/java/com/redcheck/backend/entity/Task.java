@@ -30,6 +30,12 @@ public class Task {
     @Column(name = "completed_date")
     private LocalDateTime completedDate;
 
+    @Column(nullable = false)
+    private boolean deleted = false;
+
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @ManyToOne(fetch = FetchType.LAZY)

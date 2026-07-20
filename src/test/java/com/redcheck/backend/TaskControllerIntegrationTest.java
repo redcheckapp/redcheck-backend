@@ -19,8 +19,7 @@ import org.springframework.http.MediaType;
 import java.time.LocalDateTime;
 import java.util.Collections;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -92,7 +91,7 @@ public class TaskControllerIntegrationTest {
         @DisplayName("Should return ok and JSON array")
         void getAllTasks_ShouldReturnOkAndJsonArray() throws Exception {
             // GIVEN:
-            when(taskService.getAllTask(any(), eq(10L), any(), any()))
+            when(taskService.getAllTask(any(), eq(10L), isNull(), isNull(), isNull()))
                     .thenReturn(Collections.singletonList(taskResponseDTO));
 
             // WHEN & THEN:
@@ -195,6 +194,64 @@ public class TaskControllerIntegrationTest {
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON))
                             .andExpect(status().isNoContent());
+        }
+    }
+
+    @Nested
+    @DisplayName("Endpoint: GET /trash")
+    class GetTrashTasksTests {
+
+        @Test
+        @WithMockUser(username = "user@redcheck.com", roles = "USER")
+        @DisplayName("Should return ok and JSON array of deleted tasks")
+        void getTrashTasks_ShouldReturnOkAndJsonArray() throws Exception {
+            // GIVEN:
+            when(taskService.getAllTask(any(), eq(10L), isNull(), isNull(), eq(true)))
+                    .thenReturn(Collections.singletonList(taskResponseDTO));
+
+            // WHEN & THEN:
+            mockMvc.perform(get("/subjects/10/tasks?deleted=true")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$").isArray())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$[0].id").value(1L));
+        }
+    }
+
+    @Nested
+    @DisplayName("Endpoint: PATCH /{taskId}/restore")
+    class RestoreTaskTests {
+
+        @Test
+        @WithMockUser(username = "user@redcheck.com", roles = "USER")
+        @DisplayName("Restore task should return ok status")
+        void restoreTask_ShouldReturnOkStatus() throws Exception {
+            // GIVEN:
+            when(taskService.restoreTask(eq(10L), eq(1L), any()))
+                    .thenReturn(taskResponseDTO);
+
+            // WHEN & THEN:
+            mockMvc.perform(patch("/subjects/10/tasks/1/restore")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.id").value(1L));
+        }
+    }
+
+    @Nested
+    @DisplayName("Endpoint: DELETE /{taskId}/force")
+    class HardDeleteTaskTests {
+
+        @Test
+        @WithMockUser(username = "user@redcheck.com", roles = "USER")
+        @DisplayName("When hard deleting task should return success")
+        void hardDeleteTask_ShouldReturnSuccess() throws Exception {
+            // WHEN & THEN:
+            mockMvc.perform(delete("/subjects/10/tasks/1/force")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isNoContent());
         }
     }
 

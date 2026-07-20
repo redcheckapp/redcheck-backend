@@ -76,7 +76,7 @@ public class SubjectControllerIntegrationTest {
         @DisplayName("Should return ok and JSON array")
         void getAll_ShouldReturnOkAndJsonArray() throws Exception {
             // GIVEN:
-            when(subjectService.getAllSubjects(any(), isNull()))
+            when(subjectService.getAllSubjects(any(), isNull(), isNull()))
                     .thenReturn(Collections.singletonList(subjectResponseDTO));
 
             // WHEN & THEN:
@@ -180,6 +180,64 @@ public class SubjectControllerIntegrationTest {
 
             // WHEN & THEN:
             mockMvc.perform(delete("/subjects/1")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isNoContent());
+        }
+    }
+
+    @Nested
+    @DisplayName("Endpoint: GET /trash")
+    class GetTrashSubjectsTests {
+
+        @Test
+        @WithMockUser(username = "user@redcheck.com", roles = "USER")
+        @DisplayName("Should return ok and JSON array of deleted subjects")
+        void getTrash_ShouldReturnOkAndJsonArray() throws Exception {
+            // GIVEN:
+            when(subjectService.getAllSubjects(any(), isNull(), eq(true)))
+                    .thenReturn(Collections.singletonList(subjectResponseDTO));
+
+            // WHEN & THEN:
+            mockMvc.perform(get("/subjects?deleted=true")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$").isArray())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$[0].id").value(1L));
+        }
+    }
+
+    @Nested
+    @DisplayName("Endpoint: PATCH /{id}/restore")
+    class RestoreSubjectTests {
+
+        @Test
+        @WithMockUser(username = "user@redcheck.com", roles = "USER")
+        @DisplayName("Restore subject should return ok status")
+        void restoreSubject_ShouldReturnOkStatus() throws Exception {
+            // GIVEN:
+            when(subjectService.restoreSubject(eq(1L), any()))
+                    .thenReturn(subjectResponseDTO);
+
+            // WHEN & THEN:
+            mockMvc.perform(patch("/subjects/1/restore")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.id").value(1L));
+        }
+    }
+
+    @Nested
+    @DisplayName("Endpoint: DELETE /{id}/force")
+    class HardDeleteSubjectTests {
+
+        @Test
+        @WithMockUser(username = "user@redcheck.com", roles = "USER")
+        @DisplayName("When hard deleting subject should return success")
+        void hardDeleteSubject_ShouldReturnSuccess() throws Exception {
+            // WHEN & THEN:
+            mockMvc.perform(delete("/subjects/1/force")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isNoContent());

@@ -1,5 +1,6 @@
 package com.redcheck.backend.service;
 
+import com.redcheck.backend.dto.response.SubjectResponseDTO;
 import com.redcheck.backend.dto.update.TaskCompleteDTO;
 import com.redcheck.backend.dto.request.TaskRequestDTO;
 import com.redcheck.backend.dto.response.TaskResponseDTO;
@@ -29,23 +30,28 @@ public class TaskService {
     private final TaskRepository taskRepository;
     private final SubjectRepository subjectRepository;
 
-    public List<TaskResponseDTO> getAllTask(User currentUser, Long subjectId, Boolean completed, Boolean overdue) {
+    public List<TaskResponseDTO> getAllTask(User currentUser, Long subjectId, Boolean completed, Boolean overdue, Boolean deleted) {
 
         List<Task> rawTasks;
 
-        if (overdue != null && overdue){
-            rawTasks = taskRepository.findAllBySubject_User_IdAndDeadlineBeforeAndCompletedDateIsNull(
+        // 1. If the trash is explicitly requested
+        if (deleted != null && deleted) {
+            rawTasks = taskRepository.findAllBySubject_User_IdAndDeletedTrue(currentUser.getId());
+        }
+        // 2. Normal filters (ensuring trash is excluded with AndDeletedFalse)
+        else if (overdue != null && overdue){
+            rawTasks = taskRepository.findAllBySubject_User_IdAndDeadlineBeforeAndCompletedDateIsNullAndDeletedFalse(
                     currentUser.getId(), LocalDateTime.now());
         } else if (completed != null && completed){
-            rawTasks = taskRepository.findAllBySubject_User_IdAndCompletedDateIsNotNull(currentUser.getId());
-        }else if (completed != null && !completed) {
+            rawTasks = taskRepository.findAllBySubject_User_IdAndCompletedDateIsNotNullAndDeletedFalse(currentUser.getId());
+        } else if (completed != null && !completed) {
             LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
             LocalDateTime endOfDay = LocalDate.now().atTime(LocalTime.MAX);
 
-            rawTasks = taskRepository.findPendingOrCompletedToday(
+            rawTasks = taskRepository.findPendingOrCompletedTodayAndDeletedFalse(
                     currentUser.getId(), startOfDay, endOfDay);
-        }else {
-            rawTasks = taskRepository.findAllBySubject_User_Id(currentUser.getId());
+        } else {
+            rawTasks = taskRepository.findAllBySubject_User_IdAndDeletedFalse(currentUser.getId());
         }
 
         // At this moment, only subjectId remains in memory, a simple field
@@ -90,9 +96,32 @@ public class TaskService {
 
     @Transactional
     public void deleteTask(Long subjectId, Long taskId, User currentUser){
-
         Task task = getOwnedTask(subjectId, taskId, currentUser);
+
+        task.setDeleted(true);
+        task.setDeletedAt(LocalDateTime.now());
+        taskRepository.save(task);
+    }
+
+    @Transactional
+    public void hardDeleteTask(Long subjectId, Long taskId, User currentUser){
+        Task task = getOwnedTask(subjectId, taskId, currentUser);
+
+        if(!task.isDeleted())
+            throw new IllegalStateException("The task must be in the recycle bin in order to be deleted");
+
         taskRepository.delete(task);
+    }
+
+    @Transactional
+    public TaskResponseDTO restoreTask(Long subjectId, Long taskId, User currentUser){
+        Task task = getOwnedTask(subjectId, taskId, currentUser);
+
+        task.setDeleted(false);
+        task.setDeletedAt(null);
+        taskRepository.save(task);
+
+        return toResponseDTO(task);
     }
 
     @Transactional
