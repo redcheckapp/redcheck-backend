@@ -23,10 +23,14 @@ public class SmartCheckAIController {
                 : ResponseEntity.ok(aiResponseJson);
     }
 
+    // Recibimos el idioma mediante el RequestParam
     @PostMapping("/analyze")
-    public ResponseEntity<String> dailySmartAnalysis(@AuthenticationPrincipal User currentUser){
+    public ResponseEntity<String> dailySmartAnalysis(
+            @AuthenticationPrincipal User currentUser,
+            @RequestParam(defaultValue = "es") String lang){
+
         smartCheckAIService.deleteTodaysAnalysis(currentUser);
-        smartCheckAIService.runDailySmartAnalysis(currentUser);
+        smartCheckAIService.runDailySmartAnalysis(currentUser, lang);
         return ResponseEntity.ok("El análisis ha comenzado en segundo plano. ¡Te notificaremos cuando esté listo!");
     }
 }

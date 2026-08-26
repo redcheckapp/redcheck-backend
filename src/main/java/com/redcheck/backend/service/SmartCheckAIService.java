@@ -52,7 +52,7 @@ public class SmartCheckAIService {
 
     @Async
     @Transactional
-    public void runDailySmartAnalysis(User currentUser){
+    public void runDailySmartAnalysis(User currentUser, String lang){
         try{
 
             // Look for this user's uncompleted tasks
@@ -78,8 +78,12 @@ public class SmartCheckAIService {
 
             String jsonStringTasks = objectMapper.writeValueAsString(simplifiedTasks);
 
+            String languageInstruction = lang.equalsIgnoreCase("en")
+                    ? "\n\nCRITICAL LANGUAGE REQUIREMENT: You MUST generate all the text values for 'mensajeApoyo' and 'razonPrioridad' strictly in ENGLISH. For 'nivelRiesgo' output strictly 'HIGH', 'MEDIUM', or 'LOW'. However, the JSON structural keys MUST remain exactly as requested below."
+                    : "\n\nREQUISITO DE IDIOMA CRÍTICO: Debes generar todo el contenido de los textos estrictamente en ESPAÑOL.";
+
             String prompt =
-                            "Actúa como SmartCheck AI, un experto analista de productividad y gestión del tiempo para estudiantes.\n" +
+                    "Actúa como SmartCheck AI, un experto analista de productividad y gestión del tiempo para estudiantes.\n" +
                             "Tu objetivo es crear un plan de ataque estratégico, realista y priorizado SOLO PARA HOY, basándote en datos objetivos.\n\n" +
                             "FECHA Y HORA ACTUAL: " + LocalDateTime.now() + "\n\n" +
                             "REGLAS ESTRICTAS DE PRIORIZACIÓN QUE DEBES SEGUIR OBLIGATORIAMENTE:\n" +
@@ -92,7 +96,8 @@ public class SmartCheckAIService {
                             "- 'MEDIO': Si hay 1 o 2 tareas atrasadas o que vencen hoy. El mensaje debe animar a quitárselas de en medio rápido.\n" +
                             "- 'BAJO': Si todo está al día o no hay tareas urgentes. El mensaje debe motivar a adelantar trabajo relajadamente.\n\n" +
                             "TAREAS PENDIENTES DEL USUARIO (JSON):\n" +
-                            jsonStringTasks + "\n\n" +
+                            jsonStringTasks +
+                            languageInstruction + "\n\n" +
                             "INSTRUCCIONES DE FORMATO DE SALIDA:\n" +
                             "Devuelve tu respuesta ÚNICA Y EXCLUSIVAMENTE en formato JSON puro. Genera un objeto dentro del array 'planDeHoy' por CADA tarea recibida en la entrada. Sigue estrictamente esta estructura:\n" +
                             "{\n" +
