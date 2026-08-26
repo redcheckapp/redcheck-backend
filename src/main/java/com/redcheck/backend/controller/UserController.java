@@ -34,10 +34,18 @@ public class UserController {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User currentUser = (User) authentication.getPrincipal();
 
-        if("demo@redcheck.com".equalsIgnoreCase(currentUser.getEmail())){
+        // Comprobación para la cuenta de demo en español
+        if("demo-es@redcheck.com".equalsIgnoreCase(currentUser.getEmail())){
             return ResponseEntity
                     .status(HttpStatus.FORBIDDEN)
                     .body("{\"error\": \"Acción denegada. La cuenta de demostración no puede ser eliminada.\"}");
+        }
+
+        // Comprobación para la cuenta de demo en inglés
+        if("demo-en@redcheck.com".equalsIgnoreCase(currentUser.getEmail())){
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body("{\"error\": \"Action denied. The demo account cannot be deleted.\"}");
         }
 
         userService.deleteUser(currentUser.getEmail());
