@@ -80,5 +80,31 @@ The codebase strictly adheres to the Controller-Service-Repository pattern, ensu
 
   - `DTOs (Data Transfer Objects)`: Prevent data over-fetching and securely map internal entities to external payloads.
 
+```mermaid
+graph TD
+    %% Node Styles
+    classDef proxy fill:#009639,stroke:#00732c,stroke-width:2px,color:#fff;
+    classDef backend fill:#6DB33F,stroke:#4a8229,stroke-width:2px,color:#fff;
+    classDef db fill:#00758F,stroke:#005c70,stroke-width:2px,color:#fff;
+    classDef external fill:#4285F4,stroke:#2b66c4,stroke-width:2px,color:#fff;
+
+    Gateway["API Gateway / Frontend<br>(External Requests)"]:::proxy
+    Gemini["Google Gemini AI<br>(External API)"]:::external
+
+    %% Backend Isolation Network
+    subgraph DockerNet ["Internal Network: redcheck-net"]
+        style DockerNet fill:none,stroke:#0984e3,stroke-width:2px
+        
+        Spring["Core API Container<br>(Java 17 / Spring Boot)"]:::backend
+        MySQL[("Database Container<br>(MySQL 8.0)")]:::db
+    end
+
+    %% Flow
+    Gateway -. "REST API Calls<br>(/auth, /tasks, /ai)" .-> Spring
+    Spring == "TCP 3306<br>(Spring Data JPA / Hibernate)" ==> MySQL
+    Spring -- "SmartCheck Async Prompts" --> Gemini
+    Gemini -. "JSON AI Priority Response" .-> Spring
+```
+
 ## Copyright and License
 © 2026 RedCheck. Developed by Francisco Javier Molina Cuenca. All rights reserved.
