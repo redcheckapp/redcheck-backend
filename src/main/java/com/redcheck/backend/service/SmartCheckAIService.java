@@ -86,15 +86,9 @@ public class SmartCheckAIService {
                 userAnalytics.put(subjectName, ratio);
             }
 
-            // 2. Perfil técnico unificado
-            String userProfile = "El usuario se preocupa principalmente por la arquitectura, seguridad y contenedores. " +
-                    "Delega la escritura de código casi por completo sobre IA, excepto cosas muy simples. " +
-                    "Tareas rutinarias de código implican esfuerzo cognitivo casi nulo, mientras que la infraestructura requiere foco máximo.";
-
             // 3. Ensamblar el DTO tipado
             EngineRequestDTO requestPayload = new EngineRequestDTO(
                     currentUser.getId().toString(),
-                    userProfile,
                     lang,
                     userAnalytics,
                     simplifiedTasks
