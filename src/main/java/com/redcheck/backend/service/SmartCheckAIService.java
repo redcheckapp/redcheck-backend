@@ -95,6 +95,7 @@ public class SmartCheckAIService {
             EngineRequestDTO requestPayload = new EngineRequestDTO(
                     currentUser.getId().toString(),
                     userProfile,
+                    lang,
                     userAnalytics,
                     simplifiedTasks
             );
