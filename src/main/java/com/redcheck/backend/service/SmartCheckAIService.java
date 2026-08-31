@@ -33,7 +33,7 @@ public class SmartCheckAIService {
     private final TaskRepository taskRepository;
     private final AiResponseRepository aiResponseRepository;
 
-    @Value("${ai.engine.url:http://localhost:8000}")
+    @Value("${ai.engine.url:http://smartcheck-ai-engine:8000}")
     private String aiEngineUrl;
 
     public String getTodaysAnalysis(User currentUser){
