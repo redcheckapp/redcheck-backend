@@ -19,7 +19,7 @@ spring:
 
 ai:
   engine:
-    url: http://localhost:8000
+    url: http://smartcheck-ai-engine:8000
 
 gemini:
   api:
