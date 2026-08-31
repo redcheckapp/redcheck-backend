@@ -18,7 +18,8 @@ spring:
         dialect: org.hibernate.dialect.MySQLDialect
 
 ai:
-  provider: gemini
+  engine:
+    url: http://smartcheck-ai-engine:8000
 
 gemini:
   api:
