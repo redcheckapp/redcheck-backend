@@ -1,5 +1,6 @@
 package com.redcheck.backend.service;
 
+import com.redcheck.backend.dto.request.EngineRequestDTO;
 import com.redcheck.backend.entity.AiResponse;
 import com.redcheck.backend.entity.Notification;
 import com.redcheck.backend.entity.Task;
@@ -75,31 +76,42 @@ public class SmartCheckAIService {
                     })
                     .collect(Collectors.toList());
 
-            // TODO: Conectar con ProgressRecordService para obtener analíticas reales del usuario
+            // 1. Obtener métricas agregadas desde MySQL
+            List<Object[]> queryResults = taskRepository.getSubjectCompletionRatios(currentUser.getId());
             Map<String, Integer> userAnalytics = new HashMap<>();
 
-            // Perfil técnico inyectado para el cálculo de esfuerzo cognitivo en Python
-            String userProfile = "Desarrollador de software enfocado en backend con Java, Spring Boot y React. Delega la escritura de código casi por completo a la IA, priorizando la arquitectura, la seguridad y la orquestación de contenedores. Tareas de configuración de infraestructura tienen alta carga cognitiva.";
+            for (Object[] result : queryResults) {
+                String subjectName = (String) result[0];
+                Integer ratio = ((Number) result[1]).intValue();
+                userAnalytics.put(subjectName, ratio);
+            }
 
-            Map<String, Object> requestPayload = new HashMap<>();
-            requestPayload.put("userId", currentUser.getId().toString());
-            requestPayload.put("userProfile", userProfile);
-            requestPayload.put("userAnalytics", userAnalytics);
-            requestPayload.put("tasks", simplifiedTasks);
+            // 2. Perfil técnico unificado
+            String userProfile = "El usuario se preocupa principalmente por la arquitectura, seguridad y contenedores. " +
+                    "Delega la escritura de código casi por completo sobre IA, excepto cosas muy simples. " +
+                    "Tareas rutinarias de código implican esfuerzo cognitivo casi nulo, mientras que la infraestructura requiere foco máximo.";
 
+            // 3. Ensamblar el DTO tipado
+            EngineRequestDTO requestPayload = new EngineRequestDTO(
+                    currentUser.getId().toString(),
+                    userProfile,
+                    userAnalytics,
+                    simplifiedTasks
+            );
+
+            // 4. Instanciar RestTemplate y transmitir el payload
             RestTemplate restTemplate = new RestTemplate();
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestPayload, headers);
+            HttpEntity<EngineRequestDTO> entity = new HttpEntity<>(requestPayload, headers);
 
-            // Llamada interna al microservicio de Python
             ResponseEntity<String> response = restTemplate.postForEntity(
                     aiEngineUrl + "/api/v1/prioritize",
                     entity,
                     String.class
             );
 
-            // Guardamos directamente el JSON devuelto por Pydantic
+            // 5. Guardar el JSON devuelto
             AiResponse aiResponse = AiResponse.builder()
                     .type(AiResponse.Type.DAILY_ANALYSIS)
                     .payload(response.getBody())

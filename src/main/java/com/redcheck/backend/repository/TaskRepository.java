@@ -39,4 +39,10 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     @Modifying
     @Query("DELETE FROM Task t WHERE t.deleted = true AND t.deletedAt < :cutoffDate")
     void deleteTrashOlderThan(LocalDateTime cutoffDate);
+
+    @Query("SELECT t.subject.name, " +
+            "(COUNT(CASE WHEN t.completedDate IS NOT NULL THEN 1 END) * 100) / COUNT(t) " +
+            "FROM Task t WHERE t.subject.user.id = :userId AND t.deleted = false " +
+            "GROUP BY t.subject.name")
+    List<Object[]> getSubjectCompletionRatios(@Param("userId") Long userId);
 }
