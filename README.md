@@ -91,7 +91,7 @@ graph TD
     classDef external fill:#8E75B2,stroke:#6e5a8a,stroke-width:2px,color:#fff;
 
     Gateway["API Gateway / Frontend<br>(External Requests)"]:::proxy
-    Gemini["Google Gemini 1.5<br>(External LLM API)"]:::external
+    Gemini["Google Gemini 2.5 Flash<br>(External LLM API)"]:::external
 
     %% Backend Isolation Network
     subgraph DockerNet ["Internal Network: redcheck-net"]
