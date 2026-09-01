@@ -85,11 +85,13 @@ graph TD
     %% Node Styles
     classDef proxy fill:#009639,stroke:#00732c,stroke-width:2px,color:#fff;
     classDef backend fill:#6DB33F,stroke:#4a8229,stroke-width:2px,color:#fff;
+    classDef aiengine fill:#3670A0,stroke:#29567c,stroke-width:2px,color:#fff;
     classDef db fill:#00758F,stroke:#005c70,stroke-width:2px,color:#fff;
-    classDef external fill:#4285F4,stroke:#2b66c4,stroke-width:2px,color:#fff;
+    classDef vector fill:#FF4F00,stroke:#c43c00,stroke-width:2px,color:#fff;
+    classDef external fill:#8E75B2,stroke:#6e5a8a,stroke-width:2px,color:#fff;
 
     Gateway["API Gateway / Frontend<br>(External Requests)"]:::proxy
-    Gemini["Google Gemini AI<br>(External API)"]:::external
+    Gemini["Google Gemini 1.5<br>(External LLM API)"]:::external
 
     %% Backend Isolation Network
     subgraph DockerNet ["Internal Network: redcheck-net"]
@@ -97,13 +99,24 @@ graph TD
         
         Spring["Core API Container<br>(Java 17 / Spring Boot)"]:::backend
         MySQL[("Database Container<br>(MySQL 8.0)")]:::db
+
+        %% SmartCheck AI Sub-module
+        subgraph AIModule ["SmartCheck AI Module"]
+            style AIModule fill:none,stroke:#3670A0,stroke-width:2px,stroke-dasharray: 5 5
+            
+            SmartCheck["SmartCheck AI Engine<br>(Python / FastAPI)"]:::aiengine
+            ChromaDB[("Vector Memory<br>(ChromaDB / SQLite)")]:::vector
+        end
     end
 
     %% Flow
     Gateway -. "REST API Calls<br>(/auth, /tasks, /ai)" .-> Spring
-    Spring == "TCP 3306<br>(Spring Data JPA / Hibernate)" ==> MySQL
-    Spring -- "SmartCheck Async Prompts" --> Gemini
-    Gemini -. "JSON AI Priority Response" .-> Spring
+    Spring == "TCP 3306<br>(Spring Data JPA)" ==> MySQL
+    Spring -- "POST /api/v1/prioritize<br>(DTO with Tasks & Analytics)" --> SmartCheck
+    SmartCheck == "Semantic Similarity Search" ==> ChromaDB
+    SmartCheck -- "RAG Augmented Prompt" --> Gemini
+    Gemini -. "Strict JSON Schema" .-> SmartCheck
+    SmartCheck -. "200 OK (Validated Daily Plan)" .-> Spring
 ```
 
 ## Copyright and License
