@@ -1,14 +1,12 @@
-# ==========================================
-# RedCheck API - .gitignore
-# ==========================================
-
-# 1. Compiled class files
+# Compiled class files
 *.class
 
-# 2. Log files
+# Log files
 *.log
+hs_err_pid*
+replay_pid*
 
-# 3. Maven (Build directory)
+# Maven and build directories
 target/
 pom.xml.tag
 pom.xml.releaseBackup
@@ -18,29 +16,28 @@ release.properties
 dependency-reduced-pom.xml
 buildNumber.properties
 .mvn/timing.properties
-.mvn/wrapper/maven-wrapper.jar
 
-# 4. IntelliJ IDEA (Local IDE configuration files)
+# IDE configurations
 .idea/
 *.iws
 *.iml
 *.ipr
 out/
-
-# 5. VS Code / Eclipse (In case someone else touches the code in the future)
 .vscode/
 .classpath
 .project
 .settings/
 
-# 6. Packaged files
+# Packaged archives
 *.jar
 *.war
 *.ear
 *.zip
 *.tar.gz
+# Keep Maven wrapper intact
+!/.mvn/wrapper/maven-wrapper.jar
 
-# 7. OS generated files
+# OS generated files
 .DS_Store
 .DS_Store?
 ._*
@@ -49,9 +46,11 @@ out/
 ehthumbs.db
 Thumbs.db
 
-# 8. Environment variables and local secrets (CRITICAL!)
+# Environment variables and secrets
 .env
-.env.local
+.env.*
 application-local.yml
 application-local.properties
+
+# AI Assistant tooling
 .aider*
