@@ -1,6 +1,5 @@
 package com.redcheck.backend.controller;
 
-
 import com.redcheck.backend.dto.update.SubjectArchiveDTO;
 import com.redcheck.backend.dto.request.SubjectRequestDTO;
 import com.redcheck.backend.dto.response.SubjectResponseDTO;
@@ -18,7 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/subjects")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*") // Change to @CrossOrigin(origins = "https://redcheck.com") in production
+@CrossOrigin(origins = "${app.cors.allowed-origins}")
 public class SubjectController {
 
     private final SubjectService subjectService;
@@ -36,7 +35,7 @@ public class SubjectController {
     @PostMapping
     public ResponseEntity<SubjectResponseDTO> create(
             @Valid @RequestBody SubjectRequestDTO requestDTO,
-            @AuthenticationPrincipal User currentUser){
+            @AuthenticationPrincipal User currentUser) {
 
         SubjectResponseDTO responseDTO = subjectService.createSubject(requestDTO, currentUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
@@ -44,9 +43,9 @@ public class SubjectController {
 
     @PutMapping("/{id}")
     public ResponseEntity<SubjectResponseDTO> modify(
-            @PathVariable Long id,
+                @PathVariable Long id,
             @Valid @RequestBody SubjectRequestDTO requestDTO,
-            @AuthenticationPrincipal User currentUser){
+            @AuthenticationPrincipal User currentUser) {
 
         SubjectResponseDTO responseDTO = subjectService.modifySubject(id, requestDTO, currentUser);
         return ResponseEntity.ok(responseDTO);
@@ -55,7 +54,7 @@ public class SubjectController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(
             @PathVariable Long id,
-            @AuthenticationPrincipal User currentUser){
+            @AuthenticationPrincipal User currentUser) {
 
         subjectService.deleteSubject(id, currentUser);
         return ResponseEntity.noContent().build();
@@ -64,16 +63,16 @@ public class SubjectController {
     @DeleteMapping("/{id}/force")
     public ResponseEntity<Void> hardDelete(
             @PathVariable Long id,
-            @AuthenticationPrincipal User currentUser){
+            @AuthenticationPrincipal User currentUser) {
 
         subjectService.hardDeleteSubject(id, currentUser);
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("{id}/restore")
+    @PatchMapping("/{id}/restore")
     public ResponseEntity<SubjectResponseDTO> restore(
             @PathVariable Long id,
-            @AuthenticationPrincipal User currentUser){
+            @AuthenticationPrincipal User currentUser) {
 
         SubjectResponseDTO responseDTO = subjectService.restoreSubject(id, currentUser);
         return ResponseEntity.ok(responseDTO);
@@ -83,7 +82,7 @@ public class SubjectController {
     public ResponseEntity<SubjectResponseDTO> archive(
             @PathVariable Long id,
             @Valid @RequestBody SubjectArchiveDTO requestDTO,
-            @AuthenticationPrincipal User currentUser){
+            @AuthenticationPrincipal User currentUser) {
 
         SubjectResponseDTO responseDTO = subjectService.archiveSubject(id, requestDTO, currentUser);
         return ResponseEntity.ok(responseDTO);
