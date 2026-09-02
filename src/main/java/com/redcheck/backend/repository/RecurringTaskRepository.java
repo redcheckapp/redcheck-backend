@@ -8,6 +8,8 @@ import java.util.List;
 public interface RecurringTaskRepository extends JpaRepository<RecurringTask, Long> {
 
     List<RecurringTask> findAllBySubject_User_IdAndActive(Long userId, Boolean active);
+
     List<RecurringTask> findAllBySubject_User_Id(Long userId);
+
     List<RecurringTask> findAllByActiveTrue();
 }
