@@ -42,8 +42,10 @@ public class Task {
     @JoinColumn(name = "subject_id", nullable = false)
     private Subject subject;
 
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "recurring_task_id", nullable = true)
+    @JoinColumn(name = "recurring_task_id")
     private RecurringTask recurringTask;
 
     @PrePersist
