@@ -11,8 +11,6 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString(exclude = "user")
-@EqualsAndHashCode(exclude = "user")
 public class ProgressRecord {
 
     @Id
@@ -22,12 +20,16 @@ public class ProgressRecord {
     @Column(nullable = false, updatable = false)
     private LocalDate date;
 
+    @Builder.Default
     @Column(nullable = false, columnDefinition = "int default 0")
     private int totalTasks = 0;
 
+    @Builder.Default
     @Column(nullable = false, columnDefinition = "int default 0")
     private int completedTasks = 0;
 
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
