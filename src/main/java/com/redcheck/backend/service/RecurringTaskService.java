@@ -100,7 +100,7 @@ public class RecurringTaskService {
 
         RecurringTask recurringTask = getOwnedRecurringTask(subjectId, recurringTaskId, currentUser);
 
-        recurringTask.setActive(requestDTO.isActive());
+        recurringTask.setActive(requestDTO.active());
 
         recurringTaskRepository.save(recurringTask);
         return toResponseDTO(recurringTask);

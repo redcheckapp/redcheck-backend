@@ -140,7 +140,7 @@ public class SubjectService {
             throw new SubjectNotOwnedException();
         }
 
-        subject.setArchived(requestDTO.isArchived());
+        subject.setArchived(requestDTO.archived());
 
         subjectRepository.save(subject);
 
@@ -152,7 +152,7 @@ public class SubjectService {
                 .id(subject.getId())
                 .name(subject.getName())
                 .description(subject.getDescription())
-                .archived(subject.isArchived())
+                .archived(subject.archived())
                 .deleted(subject.isDeleted())
                 .build();
     }

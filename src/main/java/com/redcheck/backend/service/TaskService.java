@@ -130,7 +130,7 @@ public class TaskService {
 
         Task task = getOwnedTask(subjectId, taskId, currentUser);
 
-        if (requestDTO.isCompleted()) {
+        if (requestDTO.completed()) {
             task.setCompletedDate(LocalDateTime.now());
         } else {
             task.setCompletedDate(null);
