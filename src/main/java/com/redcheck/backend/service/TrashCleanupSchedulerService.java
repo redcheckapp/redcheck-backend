@@ -18,21 +18,21 @@ public class TrashCleanupSchedulerService {
     private final TaskRepository taskRepository;
     private final SubjectRepository subjectRepository;
 
-    // Executes in the minute 0 of each hour (ie: 14:00, 15:00, 16:00...)
+    // Executes at minute 0 of every hour (e.g., 14:00, 15:00, 16:00...)
     @Scheduled(cron = "0 0 * * * *")
     @Transactional
     public void cleanupExpiredTrash() {
-        // Calculates deadline: 24 hours ago
+        // Calculate the cutoff date: 24 hours ago
         LocalDateTime cutoffDate = LocalDateTime.now().minusHours(24);
 
-        log.info("Initiating recycle bin clean up for elements prior to: {}", cutoffDate);
+        log.info("Initiating recycle bin cleanup for elements prior to: {}", cutoffDate);
 
-        // Removes the tasks in the bin
+        // Remove soft-deleted tasks older than the cutoff date
         taskRepository.deleteTrashOlderThan(cutoffDate);
 
-        // Removes the subjects in the bin (and all their associated info <- CASCADE)
+        // Remove soft-deleted subjects older than the cutoff date (and cascaded contents)
         subjectRepository.deleteTrashOlderThan(cutoffDate);
 
-        log.info("Recycle bin cleaning up ended up successfully.");
+        log.info("Recycle bin cleanup completed successfully.");
     }
 }
