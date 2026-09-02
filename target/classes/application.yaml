@@ -23,6 +23,10 @@ app:
   jwt:
     secret: ${JWT_SECRET}
 
+ai:
+  engine:
+    url: ${AI_ENGINE_URL:http://smartcheck-ai-engine:8000}
+
 springdoc:
   api-docs:
     enabled: false
