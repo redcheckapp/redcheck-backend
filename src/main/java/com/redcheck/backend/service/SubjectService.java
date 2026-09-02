@@ -45,13 +45,13 @@ public class SubjectService {
     @Transactional
     public SubjectResponseDTO createSubject(SubjectRequestDTO requestDTO, User currentUser) {
 
-        if (subjectRepository.existsByNameAndUser(requestDTO.getName(), currentUser)) {
-            throw new SubjectAlreadyExistsException(requestDTO.getName());
+        if (subjectRepository.existsByNameAndUser(requestDTO.name(), currentUser)) {
+            throw new SubjectAlreadyExistsException(requestDTO.name());
         }
 
         Subject subject = Subject.builder()
-                .name(requestDTO.getName())
-                .description(requestDTO.getDescription())
+                .name(requestDTO.name())
+                .description(requestDTO.description())
                 .archived(false)
                 .user(currentUser)
                 .build();
@@ -71,12 +71,12 @@ public class SubjectService {
             throw new SubjectNotOwnedException();
         }
 
-        if (subjectRepository.existsByNameAndUserAndIdNot(requestDTO.getName(), currentUser, id)) {
-            throw new SubjectAlreadyExistsException(requestDTO.getName());
+        if (subjectRepository.existsByNameAndUserAndIdNot(requestDTO.name(), currentUser, id)) {
+            throw new SubjectAlreadyExistsException(requestDTO.name());
         }
 
-        subject.setName(requestDTO.getName());
-        subject.setDescription(requestDTO.getDescription());
+        subject.setName(requestDTO.name());
+        subject.setDescription(requestDTO.description());
 
         subjectRepository.save(subject);
 

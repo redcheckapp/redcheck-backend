@@ -53,9 +53,9 @@ public class RecurringTaskService {
         }
 
         RecurringTask recurringTask = RecurringTask.builder()
-                .title(requestDTO.getTitle())
-                .description(requestDTO.getDescription())
-                .frequency(requestDTO.getFrequency())
+                .title(requestDTO.title())
+                .description(requestDTO.description())
+                .frequency(requestDTO.frequency())
                 .active(true)
                 .subject(subject)
                 .build();
@@ -76,9 +76,9 @@ public class RecurringTaskService {
             throw new SubjectNotOwnedException();
         }
 
-        recurringTask.setTitle(requestDTO.getTitle());
-        recurringTask.setDescription(requestDTO.getDescription());
-        recurringTask.setFrequency(requestDTO.getFrequency());
+        recurringTask.setTitle(requestDTO.title());
+        recurringTask.setDescription(requestDTO.description());
+        recurringTask.setFrequency(requestDTO.frequency());
         recurringTask.setSubject(newSubject);
 
         recurringTaskRepository.save(recurringTask);

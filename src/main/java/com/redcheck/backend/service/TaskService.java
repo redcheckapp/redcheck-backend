@@ -71,9 +71,9 @@ public class TaskService {
         }
 
         Task task = Task.builder()
-                .title(requestDTO.getTitle())
-                .description(requestDTO.getDescription())
-                .deadline(requestDTO.getDeadline())
+                .title(requestDTO.title())
+                .description(requestDTO.description())
+                .deadline(requestDTO.deadline())
                 .subject(subject)
                 .build();
 
@@ -86,9 +86,9 @@ public class TaskService {
 
         Task task = getOwnedTask(subjectId, taskId, currentUser);
 
-        task.setTitle(requestDTO.getTitle());
-        task.setDescription(requestDTO.getDescription());
-        task.setDeadline(requestDTO.getDeadline());
+        task.setTitle(requestDTO.title());
+        task.setDescription(requestDTO.description());
+        task.setDeadline(requestDTO.deadline());
 
         taskRepository.save(task);
         return toResponseDTO(task);

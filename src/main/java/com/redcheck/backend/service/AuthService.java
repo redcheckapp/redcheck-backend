@@ -23,15 +23,15 @@ public class AuthService {
 
     public AuthResponseDTO register(RegisterRequestDTO requestDTO) {
         // Check if the email already exists (error handling to be improved in future versions)
-        if (userRepository.existsByEmail(requestDTO.getEmail())) {
+        if (userRepository.existsByEmail(requestDTO.email())) {
             throw new RuntimeException("Email already registered");
         }
 
         // Create user with the encrypted password
         User user = User.builder()
-                .username(requestDTO.getUsername())
-                .email(requestDTO.getEmail())
-                .password(passwordEncoder.encode(requestDTO.getPassword()))
+                .username(requestDTO.username())
+                .email(requestDTO.email())
+                .password(passwordEncoder.encode(requestDTO.password()))
                 .build();
 
         userRepository.save(user);
@@ -48,13 +48,13 @@ public class AuthService {
         // Authenticate user (throws exception if credentials are invalid)
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        requestDTO.getEmail(),
-                        requestDTO.getPassword()
+                        requestDTO.email(),
+                        requestDTO.password()
                 )
         );
 
         // Retrieve the authenticated user
-        User user = userRepository.findByEmail(requestDTO.getEmail())
+        User user = userRepository.findByEmail(requestDTO.email())
                 .orElseThrow();
 
         String jwtToken = jwtService.generateToken(user);
