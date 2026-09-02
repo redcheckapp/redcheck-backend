@@ -15,14 +15,14 @@ import java.util.List;
 @RestController
 @RequestMapping("/progress")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "${app.cors.allowed-origins}")
 public class ProgressRecordController {
 
     private final ProgressRecordService progressRecordService;
 
     @GetMapping("/heatmap")
     public ResponseEntity<List<ProgressRecordResponseDTO>> getHeatmap(
-            @AuthenticationPrincipal User currentUser){
+            @AuthenticationPrincipal User currentUser) {
 
         List<ProgressRecordResponseDTO> response = progressRecordService.getHeatmap(currentUser);
         return ResponseEntity.ok(response);
@@ -31,7 +31,7 @@ public class ProgressRecordController {
     @GetMapping("/day")
     public ResponseEntity<ProgressRecordResponseDTO> getByDay(
             @AuthenticationPrincipal User currentUser,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date){
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
 
         ProgressRecordResponseDTO response = progressRecordService.getDayProgress(currentUser, date);
         return ResponseEntity.ok(response);
