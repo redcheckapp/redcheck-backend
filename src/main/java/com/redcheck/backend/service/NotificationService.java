@@ -17,14 +17,15 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
 
-    public List<NotificationResponseDTO> getNotifications(@AuthenticationPrincipal User currentUser, Boolean read){
+    public List<NotificationResponseDTO> getNotifications(@AuthenticationPrincipal User currentUser, Boolean read) {
 
         List<Notification> rawNotifications;
 
-        if(read != null)
+        if (read != null) {
             rawNotifications = notificationRepository.findAllByUserAndRead(currentUser, read);
-        else
+        } else {
             rawNotifications = notificationRepository.findAllByUser(currentUser);
+        }
 
         return rawNotifications
                 .stream()
@@ -34,7 +35,7 @@ public class NotificationService {
 
     // --- Auxiliary methods ---
 
-    private NotificationResponseDTO toResponseDTO(Notification notification){
+    private NotificationResponseDTO toResponseDTO(Notification notification) {
         return NotificationResponseDTO.builder()
                 .id(notification.getId())
                 .title(notification.getTitle())
