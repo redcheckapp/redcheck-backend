@@ -66,16 +66,11 @@ public class UserControllerIntegrationTest {
         @Test
         @DisplayName("When authenticated should return ok and user response DTO")
         void getProfile_ShouldReturnOkAndUserResponseDTO() throws Exception {
-            // GIVEN:
-
-            // WHEN & THEN:
             mockMvc.perform(get("/users/profile")
                             .with(authentication(mockAuthToken))
                             .contentType(MediaType.APPLICATION_JSON))
-
                     .andExpect(status().isOk())
                     .andExpect(MockMvcResultMatchers.content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-
                     .andExpect(MockMvcResultMatchers.jsonPath("$.username").value(mockUser.getUsername()));
         }
     }
@@ -87,15 +82,12 @@ public class UserControllerIntegrationTest {
         @Test
         @DisplayName("When authenticated should delete account and return no content")
         void deleteMyAccount_ShouldReturnNoContent() throws Exception {
-            // GIVEN:
             doNothing().when(userService).deleteUser(anyString());
 
-            // WHEN & THEN:
             mockMvc.perform(delete("/users/me")
                             .with(csrf())
                             .with(authentication(mockAuthToken))
                             .contentType(MediaType.APPLICATION_JSON))
-
                     .andExpect(status().isNoContent());
         }
     }
