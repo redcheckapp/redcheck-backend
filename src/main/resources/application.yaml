@@ -17,11 +17,12 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
 
-ai:
-  engine:
-    url: http://smartcheck-ai-engine:8000
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
 
-gemini:
-  api:
-    key: ${GEMINI_API_KEY}
-  model: gemini-2.5-flash
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
