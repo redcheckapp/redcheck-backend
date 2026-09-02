@@ -9,14 +9,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 
 import java.util.Collections;
 
@@ -67,12 +66,17 @@ public class UserControllerIntegrationTest {
         @Test
         @DisplayName("When authenticated should return ok and user response DTO")
         void getProfile_ShouldReturnOkAndUserResponseDTO() throws Exception {
+            // GIVEN:
+
+            // WHEN & THEN:
             mockMvc.perform(get("/users/profile")
                             .with(authentication(mockAuthToken))
                             .contentType(MediaType.APPLICATION_JSON))
+
                     .andExpect(status().isOk())
                     .andExpect(MockMvcResultMatchers.content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.username").value(mockUser.getUsername()));
+
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.username").value(mockUser.getActualUsername()));
         }
     }
 
@@ -83,12 +87,15 @@ public class UserControllerIntegrationTest {
         @Test
         @DisplayName("When authenticated should delete account and return no content")
         void deleteMyAccount_ShouldReturnNoContent() throws Exception {
+            // GIVEN:
             doNothing().when(userService).deleteUser(anyString());
 
+            // WHEN & THEN:
             mockMvc.perform(delete("/users/me")
                             .with(csrf())
                             .with(authentication(mockAuthToken))
                             .contentType(MediaType.APPLICATION_JSON))
+
                     .andExpect(status().isNoContent());
         }
     }
