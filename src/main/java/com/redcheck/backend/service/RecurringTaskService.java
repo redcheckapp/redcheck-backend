@@ -25,16 +25,17 @@ public class RecurringTaskService {
     private final SubjectRepository subjectRepository;
     private final TaskRepository taskRepository;
 
-    public List<RecurringTaskResponseDTO> getAllRecurringTask(User currentUser, Long subjectId, Boolean active){
+    public List<RecurringTaskResponseDTO> getAllRecurringTask(User currentUser, Long subjectId, Boolean active) {
 
         List<RecurringTask> rawRecurringTask;
 
-        if(active != null)
+        if (active != null) {
             rawRecurringTask = recurringTaskRepository.findAllBySubject_User_IdAndActive(currentUser.getId(), active);
-        else
+        } else {
             rawRecurringTask = recurringTaskRepository.findAllBySubject_User_Id(currentUser.getId());
+        }
 
-        // At this moment, only subjectId remains in memory, a simple field
+        // At this point, only the subjectId filter is applied in memory
         return rawRecurringTask.stream()
                 .map(this::toResponseDTO)
                 .filter(recurringTask -> subjectId == null || recurringTask.getSubjectId().equals(subjectId))
@@ -42,13 +43,14 @@ public class RecurringTaskService {
     }
 
     @Transactional
-    public RecurringTaskResponseDTO createRecurringTask(Long subjectId, RecurringTaskRequestDTO requestDTO, User currentUser){
+    public RecurringTaskResponseDTO createRecurringTask(Long subjectId, RecurringTaskRequestDTO requestDTO, User currentUser) {
 
         Subject subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new SubjectNotFoundException(subjectId));
 
-        if(!subject.getUser().getId().equals(currentUser.getId()))
+        if (!subject.getUser().getId().equals(currentUser.getId())) {
             throw new SubjectNotOwnedException();
+        }
 
         RecurringTask recurringTask = RecurringTask.builder()
                 .title(requestDTO.getTitle())
@@ -63,15 +65,16 @@ public class RecurringTaskService {
     }
 
     @Transactional
-    public RecurringTaskResponseDTO updateRecurringTask(Long subjectId, Long recurringTaskId, RecurringTaskRequestDTO requestDTO, User currentUser){
+    public RecurringTaskResponseDTO updateRecurringTask(Long subjectId, Long recurringTaskId, RecurringTaskRequestDTO requestDTO, User currentUser) {
 
         RecurringTask recurringTask = getOwnedRecurringTask(subjectId, recurringTaskId, currentUser);
 
         Subject newSubject = subjectRepository.findById(requestDTO.getSubjectId())
                 .orElseThrow(() -> new SubjectNotFoundException(requestDTO.getSubjectId()));
 
-        if (!newSubject.getUser().getId().equals(currentUser.getId()))
+        if (!newSubject.getUser().getId().equals(currentUser.getId())) {
             throw new SubjectNotOwnedException();
+        }
 
         recurringTask.setTitle(requestDTO.getTitle());
         recurringTask.setDescription(requestDTO.getDescription());
@@ -83,7 +86,7 @@ public class RecurringTaskService {
     }
 
     @Transactional
-    public void deleteRecurringTask(Long subjectId, Long recurringTaskId, User currentUser){
+    public void deleteRecurringTask(Long subjectId, Long recurringTaskId, User currentUser) {
 
         RecurringTask recurringTask = getOwnedRecurringTask(subjectId, recurringTaskId, currentUser);
 
@@ -93,7 +96,7 @@ public class RecurringTaskService {
     }
 
     @Transactional
-    public RecurringTaskResponseDTO activateRecurringTask(Long subjectId, Long recurringTaskId, RecurringTaskActiveDTO requestDTO, User currentUser){
+    public RecurringTaskResponseDTO activateRecurringTask(Long subjectId, Long recurringTaskId, RecurringTaskActiveDTO requestDTO, User currentUser) {
 
         RecurringTask recurringTask = getOwnedRecurringTask(subjectId, recurringTaskId, currentUser);
 
@@ -103,24 +106,26 @@ public class RecurringTaskService {
         return toResponseDTO(recurringTask);
     }
 
-    // --- Auxiliary methods
-    private RecurringTask getOwnedRecurringTask(Long subjectId, Long recurringTaskId, User currentUser){
+    // --- Auxiliary methods ---
+    private RecurringTask getOwnedRecurringTask(Long subjectId, Long recurringTaskId, User currentUser) {
         Subject subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new SubjectNotFoundException(subjectId));
 
-        if(!subject.getUser().getId().equals(currentUser.getId()))
+        if (!subject.getUser().getId().equals(currentUser.getId())) {
             throw new SubjectNotOwnedException();
+        }
 
         RecurringTask recurringTask = recurringTaskRepository.findById(recurringTaskId)
                 .orElseThrow(() -> new RecurringTaskNotFoundException(recurringTaskId));
 
-        if(!recurringTask.getSubject().getId().equals(subjectId))
+        if (!recurringTask.getSubject().getId().equals(subjectId)) {
             throw new RecurringTaskNotOwnedException();
+        }
 
         return recurringTask;
     }
 
-    private RecurringTaskResponseDTO toResponseDTO(RecurringTask recurringTask){
+    private RecurringTaskResponseDTO toResponseDTO(RecurringTask recurringTask) {
         return RecurringTaskResponseDTO.builder()
                 .id(recurringTask.getId())
                 .title(recurringTask.getTitle())
