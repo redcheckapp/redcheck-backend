@@ -17,13 +17,9 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
 
-ai:
-  provider: gemini
-
-gemini:
-  api:
-    key: ${GEMINI_API_KEY}
-  model: gemini-2.5-flash
+app:
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
 
 springdoc:
   api-docs:
