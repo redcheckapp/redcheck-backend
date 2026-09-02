@@ -1,8 +1,11 @@
 package com.redcheck.backend.dto.request;
 
+import lombok.Builder;
+
 import java.util.List;
 import java.util.Map;
 
+@Builder
 public record EngineRequestDTO(
         String userId,
         String lang,
