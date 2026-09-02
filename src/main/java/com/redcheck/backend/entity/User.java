@@ -43,57 +43,57 @@ public class User implements UserDetails {
     private List<ProgressRecord> progressRecords = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProgressRecord> notifications = new ArrayList<>();
+    private List<Notification> notifications = new ArrayList<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<ProgressRecord> aiResponses = new ArrayList<>();
+    private List<AiResponse> aiResponses = new ArrayList<>();
 
-    public String getActualUsername(){
+    public String getActualUsername() {
         return username;
     }
 
-    //This method executes automatically before saving user for the first time
+    // This method executes automatically before saving the user for the first time
     @PrePersist
-    protected void onCreate(){
+    protected void onCreate() {
         creationDate = LocalDateTime.now();
     }
 
     // --- UserDetails methods (Spring Security) ---
 
     @Override
-    public Collection<? extends GrantedAuthority> getAuthorities(){
-        // In MVP we dont have complex roles, we return a basic role
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        // In the MVP, complex roles are not implemented; return a default role
         return List.of(new SimpleGrantedAuthority("ROLE_USER"));
     }
 
     @Override
-    public String getPassword(){
+    public String getPassword() {
         return this.password;
     }
 
     @Override
-    public String getUsername(){
-        // We will use email for login instead of username
+    public String getUsername() {
+        // Use email for authentication instead of username
         return this.email;
     }
 
     @Override
-    public boolean isAccountNonExpired(){
+    public boolean isAccountNonExpired() {
         return true;
     }
 
     @Override
-    public boolean isAccountNonLocked(){
+    public boolean isAccountNonLocked() {
         return true;
     }
 
     @Override
-    public boolean isCredentialsNonExpired(){
+    public boolean isCredentialsNonExpired() {
         return true;
     }
 
     @Override
-    public boolean isEnabled(){
+    public boolean isEnabled() {
         return true;
     }
 }
