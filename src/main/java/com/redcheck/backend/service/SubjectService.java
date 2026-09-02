@@ -43,10 +43,11 @@ public class SubjectService {
     }
 
     @Transactional
-    public SubjectResponseDTO createSubject(SubjectRequestDTO requestDTO, User currentUser){
+    public SubjectResponseDTO createSubject(SubjectRequestDTO requestDTO, User currentUser) {
 
-        if(subjectRepository.existsByNameAndUser(requestDTO.getName(), currentUser))
+        if (subjectRepository.existsByNameAndUser(requestDTO.getName(), currentUser)) {
             throw new SubjectAlreadyExistsException(requestDTO.getName());
+        }
 
         Subject subject = Subject.builder()
                 .name(requestDTO.getName())
@@ -61,16 +62,18 @@ public class SubjectService {
     }
 
     @Transactional
-    public SubjectResponseDTO modifySubject(Long id, SubjectRequestDTO requestDTO, User currentUser){
+    public SubjectResponseDTO modifySubject(Long id, SubjectRequestDTO requestDTO, User currentUser) {
 
         Subject subject = subjectRepository.findById(id)
                 .orElseThrow(() -> new SubjectNotFoundException(id));
 
-        if(!subject.getUser().getId().equals(currentUser.getId()))
+        if (!subject.getUser().getId().equals(currentUser.getId())) {
             throw new SubjectNotOwnedException();
+        }
 
-        if(subjectRepository.existsByNameAndUserAndIdNot(requestDTO.getName(), currentUser, id))
+        if (subjectRepository.existsByNameAndUserAndIdNot(requestDTO.getName(), currentUser, id)) {
             throw new SubjectAlreadyExistsException(requestDTO.getName());
+        }
 
         subject.setName(requestDTO.getName());
         subject.setDescription(requestDTO.getDescription());
@@ -81,13 +84,14 @@ public class SubjectService {
     }
 
     @Transactional
-    public void deleteSubject(Long id, User currentUser){
+    public void deleteSubject(Long id, User currentUser) {
 
         Subject subject = subjectRepository.findById(id)
                 .orElseThrow(() -> new SubjectNotFoundException(id));
 
-        if(!subject.getUser().getId().equals(currentUser.getId()))
+        if (!subject.getUser().getId().equals(currentUser.getId())) {
             throw new SubjectNotOwnedException();
+        }
 
         subject.setDeleted(true);
         subject.setDeletedAt(LocalDateTime.now());
@@ -95,26 +99,29 @@ public class SubjectService {
     }
 
     @Transactional
-    public void hardDeleteSubject(Long id, User currentUser){
+    public void hardDeleteSubject(Long id, User currentUser) {
         Subject subject = subjectRepository.findById(id)
                 .orElseThrow(() -> new SubjectNotFoundException(id));
 
-        if(!subject.getUser().getId().equals(currentUser.getId()))
+        if (!subject.getUser().getId().equals(currentUser.getId())) {
             throw new SubjectNotOwnedException();
+        }
 
-        if(!subject.isDeleted())
+        if (!subject.isDeleted()) {
             throw new IllegalStateException("The subject must be in the recycle bin in order to be deleted");
+        }
 
         subjectRepository.delete(subject);
     }
 
     @Transactional
-    public SubjectResponseDTO restoreSubject(Long id, User currentUser){
+    public SubjectResponseDTO restoreSubject(Long id, User currentUser) {
         Subject subject = subjectRepository.findById(id)
                 .orElseThrow(() -> new SubjectNotFoundException(id));
 
-        if(!subject.getUser().getId().equals(currentUser.getId()))
+        if (!subject.getUser().getId().equals(currentUser.getId())) {
             throw new SubjectNotOwnedException();
+        }
 
         subject.setDeleted(false);
         subject.setDeletedAt(null);
@@ -124,13 +131,14 @@ public class SubjectService {
     }
 
     @Transactional
-    public SubjectResponseDTO archiveSubject(Long id, SubjectArchiveDTO requestDTO, User currentUser){
+    public SubjectResponseDTO archiveSubject(Long id, SubjectArchiveDTO requestDTO, User currentUser) {
 
         Subject subject = subjectRepository.findById(id)
                 .orElseThrow(() -> new SubjectNotFoundException(id));
 
-        if(!subject.getUser().getId().equals(currentUser.getId()))
+        if (!subject.getUser().getId().equals(currentUser.getId())) {
             throw new SubjectNotOwnedException();
+        }
 
         subject.setArchived(requestDTO.isArchived());
 
