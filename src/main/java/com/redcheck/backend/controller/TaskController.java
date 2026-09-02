@@ -1,12 +1,10 @@
 package com.redcheck.backend.controller;
 
-import com.redcheck.backend.dto.response.SubjectResponseDTO;
 import com.redcheck.backend.dto.update.TaskCompleteDTO;
 import com.redcheck.backend.dto.request.TaskRequestDTO;
 import com.redcheck.backend.dto.response.TaskResponseDTO;
 import com.redcheck.backend.entity.User;
 import com.redcheck.backend.service.TaskService;
-import org.springframework.web.bind.annotation.RequestBody;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,7 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/subjects/{subjectId}/tasks")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "${app.cors.allowed-origins}")
 public class TaskController {
 
     private final TaskService taskService;
@@ -30,7 +28,7 @@ public class TaskController {
             @PathVariable Long subjectId,
             @RequestParam(required = false) Boolean completed,
             @RequestParam(required = false) Boolean overdue,
-            @RequestParam(required = false) Boolean deleted){
+            @RequestParam(required = false) Boolean deleted) {
 
         List<TaskResponseDTO> response = taskService.getAllTask(currentUser, subjectId, completed, overdue, deleted);
         return ResponseEntity.ok(response);
@@ -40,7 +38,7 @@ public class TaskController {
     public ResponseEntity<TaskResponseDTO> create(
             @PathVariable Long subjectId,
             @Valid @RequestBody TaskRequestDTO requestDTO,
-            @AuthenticationPrincipal User currentUser){
+            @AuthenticationPrincipal User currentUser) {
 
         TaskResponseDTO response = taskService.createTask(subjectId, requestDTO, currentUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -51,7 +49,7 @@ public class TaskController {
             @PathVariable Long subjectId,
             @PathVariable Long taskId,
             @Valid @RequestBody TaskRequestDTO requestDTO,
-            @AuthenticationPrincipal User currentUser){
+            @AuthenticationPrincipal User currentUser) {
 
         TaskResponseDTO response = taskService.updateTask(subjectId, taskId, requestDTO, currentUser);
         return ResponseEntity.ok(response);
@@ -61,7 +59,7 @@ public class TaskController {
     public ResponseEntity<Void> delete(
             @PathVariable Long subjectId,
             @PathVariable Long taskId,
-            @AuthenticationPrincipal User currentUser){
+            @AuthenticationPrincipal User currentUser) {
 
         taskService.deleteTask(subjectId, taskId, currentUser);
         return ResponseEntity.noContent().build();
@@ -71,17 +69,17 @@ public class TaskController {
     public ResponseEntity<Void> hardDelete(
             @PathVariable Long subjectId,
             @PathVariable Long taskId,
-            @AuthenticationPrincipal User currentUser){
+            @AuthenticationPrincipal User currentUser) {
 
         taskService.hardDeleteTask(subjectId, taskId, currentUser);
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("{taskId}/restore")
+    @PatchMapping("/{taskId}/restore")
     public ResponseEntity<TaskResponseDTO> restore(
             @PathVariable Long subjectId,
             @PathVariable Long taskId,
-            @AuthenticationPrincipal User currentUser){
+            @AuthenticationPrincipal User currentUser) {
 
         TaskResponseDTO responseDTO = taskService.restoreTask(subjectId, taskId, currentUser);
         return ResponseEntity.ok(responseDTO);
@@ -92,7 +90,7 @@ public class TaskController {
             @PathVariable Long subjectId,
             @PathVariable Long taskId,
             @Valid @RequestBody TaskCompleteDTO requestDTO,
-            @AuthenticationPrincipal User currentUser){
+            @AuthenticationPrincipal User currentUser) {
 
         TaskResponseDTO response = taskService.markTaskAsCompleted(subjectId, taskId, requestDTO, currentUser);
         return ResponseEntity.ok(response);

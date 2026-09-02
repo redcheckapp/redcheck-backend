@@ -14,8 +14,11 @@ import java.util.Optional;
 public interface TaskRepository extends JpaRepository<Task, Long> {
 
     List<Task> findAllBySubject_User_IdAndDeletedFalse(Long userId);
+
     List<Task> findAllBySubject_User_IdAndCompletedDateIsNullAndDeletedFalse(Long userId);
+
     List<Task> findAllBySubject_User_IdAndCompletedDateIsNotNullAndDeletedFalse(Long userId);
+
     List<Task> findAllBySubject_User_IdAndDeadlineBeforeAndCompletedDateIsNullAndDeletedFalse(Long userId, LocalDateTime now);
 
     @Query("SELECT t FROM Task t WHERE t.subject.user.id = :userId AND t.deleted = false AND (t.completedDate IS NULL OR (t.completedDate >= :startOfDay AND t.completedDate <= :endOfDay))")
@@ -32,6 +35,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     void detachFromRecurringTask(@Param("recurringTask") RecurringTask recurringTask);
 
     long countBySubjectUserIdAndCompletedDateBetweenAndDeletedFalse(Long userId, LocalDateTime startOfDay, LocalDateTime endOfDay);
+
     long countBySubjectUserIdAndCompletedDateIsNullAndDeletedFalse(Long userId);
 
     List<Task> findAllBySubject_User_IdAndDeletedTrue(Long userId);

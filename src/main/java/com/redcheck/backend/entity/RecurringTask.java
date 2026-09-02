@@ -13,8 +13,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString(exclude = "subject")
-@EqualsAndHashCode(exclude = "subject")
 public class RecurringTask {
 
     @Id
@@ -29,6 +27,7 @@ public class RecurringTask {
     @Column(nullable = false)
     private String frequency;
 
+    @Builder.Default
     @Column(nullable = false)
     private boolean active = true;
 
@@ -38,10 +37,15 @@ public class RecurringTask {
     @Column(name = "latest_generated_date")
     private LocalDateTime latestGeneratedDate;
 
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "subject_id", nullable = false)
     private Subject subject;
 
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @Builder.Default
     @OneToMany(mappedBy = "recurringTask")
     private List<Task> generatedTasks = new ArrayList<>();
 

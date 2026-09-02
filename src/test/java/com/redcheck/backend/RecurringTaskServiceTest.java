@@ -102,7 +102,7 @@ public class RecurringTaskServiceTest {
 
             // THEN
             assertEquals(1, result.size());
-            assertEquals("Study Math", result.get(0).getTitle());
+            assertEquals("Study Math", result.get(0).title());
             verify(recurringTaskRepository, times(1)).findAllBySubject_User_IdAndActive(currentUser.getId(), true);
             verify(recurringTaskRepository, never()).findAllBySubject_User_Id(anyLong());
         }
@@ -142,7 +142,7 @@ public class RecurringTaskServiceTest {
 
             // THEN
             assertNotNull(result);
-            assertEquals(requestDTO.getTitle(), result.getTitle());
+            assertEquals(requestDTO.title(), result.title());
             verify(subjectRepository, times(1)).findById(mockSubject.getId());
             verify(recurringTaskRepository, times(1)).save(any(RecurringTask.class));
         }
@@ -177,7 +177,7 @@ public class RecurringTaskServiceTest {
             when(recurringTaskRepository.findById(mockRecurringTask.getId()))
                     .thenReturn(Optional.of(mockRecurringTask));
 
-            when(subjectRepository.findById(requestDTO.getSubjectId()))
+            when(subjectRepository.findById(requestDTO.subjectId()))
                     .thenReturn(Optional.of(mockSubject));
 
             // WHEN
@@ -185,8 +185,8 @@ public class RecurringTaskServiceTest {
 
             // THEN
             assertNotNull(result);
-            assertEquals("New Title", result.getTitle());
-            assertEquals("New Desc", result.getDescription());
+            assertEquals("New Title", result.title());
+            assertEquals("New Desc", result.description());
             verify(recurringTaskRepository, times(1)).save(mockRecurringTask);
         }
 
@@ -195,7 +195,7 @@ public class RecurringTaskServiceTest {
         void update_WhenTaskBelongsToAnotherSubject_ShouldThrowException() {
             // GIVEN
             Subject anotherSubject = Subject.builder().id(99L).user(currentUser).build();
-            mockRecurringTask.setSubject(anotherSubject); // La tarea pertenece a la asignatura 99, no a la 10
+            mockRecurringTask.setSubject(anotherSubject);
 
             when(subjectRepository.findById(mockSubject.getId()))
                     .thenReturn(Optional.of(mockSubject));
@@ -253,7 +253,7 @@ public class RecurringTaskServiceTest {
             RecurringTaskResponseDTO result = recurringTaskService.activateRecurringTask(mockSubject.getId(), mockRecurringTask.getId(), activeDTO, currentUser);
 
             // THEN
-            assertFalse(result.isActive());
+            assertFalse(result.active());
             verify(recurringTaskRepository, times(1)).save(mockRecurringTask);
         }
     }

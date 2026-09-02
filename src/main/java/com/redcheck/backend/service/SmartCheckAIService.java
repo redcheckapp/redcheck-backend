@@ -10,6 +10,7 @@ import com.redcheck.backend.repository.NotificationRepository;
 import com.redcheck.backend.repository.TaskRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class SmartCheckAIService {
@@ -33,10 +35,10 @@ public class SmartCheckAIService {
     private final TaskRepository taskRepository;
     private final AiResponseRepository aiResponseRepository;
 
-    @Value("${ai.engine.url:http://smartcheck-ai-engine:8000}")
+    @Value("${ai.engine.url}")
     private String aiEngineUrl;
 
-    public String getTodaysAnalysis(User currentUser){
+    public String getTodaysAnalysis(User currentUser) {
         return aiResponseRepository
                 .findFirstByUserAndTypeOrderByCreatedDateDesc(
                         currentUser,
@@ -47,7 +49,7 @@ public class SmartCheckAIService {
     }
 
     @Transactional
-    public void deleteTodaysAnalysis(User currentUser){
+    public void deleteTodaysAnalysis(User currentUser) {
         aiResponseRepository
                 .findFirstByUserAndTypeOrderByCreatedDateDesc(
                         currentUser,
@@ -57,7 +59,7 @@ public class SmartCheckAIService {
 
     @Async
     @Transactional
-    public void runDailySmartAnalysis(User currentUser, String lang){
+    public void runDailySmartAnalysis(User currentUser, String lang) {
         try {
             List<Task> pendingTasks = taskRepository.findAllBySubject_User_IdAndCompletedDateIsNullAndDeletedFalse(currentUser.getId());
 
@@ -69,14 +71,14 @@ public class SmartCheckAIService {
                         taskMap.put("descripcion", task.getDescription());
                         taskMap.put("fechaLimite", task.getDeadline() != null ? task.getDeadline().toString() : null);
 
-                        if(task.getSubject() != null){
+                        if (task.getSubject() != null) {
                             taskMap.put("asignatura", task.getSubject().getName());
                         }
                         return taskMap;
                     })
                     .collect(Collectors.toList());
 
-            // 1. Obtener métricas agregadas desde MySQL
+            // 1. Retrieve aggregated metrics from MySQL
             List<Object[]> queryResults = taskRepository.getSubjectCompletionRatios(currentUser.getId());
             Map<String, Integer> userAnalytics = new HashMap<>();
 
@@ -86,7 +88,7 @@ public class SmartCheckAIService {
                 userAnalytics.put(subjectName, ratio);
             }
 
-            // 3. Ensamblar el DTO tipado
+            // 2. Assemble the typed DTO
             EngineRequestDTO requestPayload = new EngineRequestDTO(
                     currentUser.getId().toString(),
                     lang,
@@ -94,7 +96,7 @@ public class SmartCheckAIService {
                     simplifiedTasks
             );
 
-            // 4. Instanciar RestTemplate y transmitir el payload
+            // 3. Instantiate RestTemplate and transmit the payload
             RestTemplate restTemplate = new RestTemplate();
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -106,7 +108,7 @@ public class SmartCheckAIService {
                     String.class
             );
 
-            // 5. Guardar el JSON devuelto
+            // 4. Save the returned JSON
             AiResponse aiResponse = AiResponse.builder()
                     .type(AiResponse.Type.DAILY_ANALYSIS)
                     .payload(response.getBody())
@@ -115,17 +117,17 @@ public class SmartCheckAIService {
             aiResponseRepository.save(aiResponse);
 
             Notification notification = Notification.builder()
-                    .title("Análisis completado")
-                    .message("Toca para ver el análisis de SmartCheck AI")
+                    .title("Analysis completed")
+                    .message("Tap to view your SmartCheck AI analysis")
                     .user(currentUser)
                     .build();
             notificationRepository.save(notification);
 
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Error during SmartCheck AI analysis for user ID {}", currentUser.getId(), e);
             Notification notificationError = Notification.builder()
-                    .title("Error en SmartCheck AI")
-                    .message("No pudimos analizar tus tareas.")
+                    .title("SmartCheck AI Error")
+                    .message("We couldn't analyze your tasks.")
                     .user(currentUser)
                     .build();
             notificationRepository.save(notificationError);

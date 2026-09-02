@@ -1,2 +1,29 @@
+# Default behavior
+* text=auto
+
+# Executable scripts
 /mvnw text eol=lf
+*.sh text eol=lf
 *.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Docker configuration
+Dockerfile* text eol=lf
+.dockerignore text eol=lf
+
+# Source code and configuration
+*.java text diff=java
+*.xml text
+*.yml text
+*.yaml text
+*.properties text
+
+# Binary files
+*.jar binary
+*.class binary
+*.jks binary
+*.keystore binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary

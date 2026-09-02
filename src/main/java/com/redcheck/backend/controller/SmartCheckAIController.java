@@ -10,27 +10,26 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/ai")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "${app.cors.allowed-origins}")
 public class SmartCheckAIController {
 
     private final SmartCheckAIService smartCheckAIService;
 
     @GetMapping("/today/analysis")
-    public ResponseEntity<String> getTodaysAnalysis(@AuthenticationPrincipal User currentUser){
+    public ResponseEntity<String> getTodaysAnalysis(@AuthenticationPrincipal User currentUser) {
         String aiResponseJson = smartCheckAIService.getTodaysAnalysis(currentUser);
         return (aiResponseJson == null || aiResponseJson.isEmpty())
                 ? ResponseEntity.notFound().build()
                 : ResponseEntity.ok(aiResponseJson);
     }
 
-    // Recibimos el idioma mediante el RequestParam
     @PostMapping("/analyze")
     public ResponseEntity<String> dailySmartAnalysis(
             @AuthenticationPrincipal User currentUser,
-            @RequestParam(defaultValue = "es") String lang){
+            @RequestParam(defaultValue = "es") String lang) {
 
         smartCheckAIService.deleteTodaysAnalysis(currentUser);
         smartCheckAIService.runDailySmartAnalysis(currentUser, lang);
-        return ResponseEntity.ok("El análisis ha comenzado en segundo plano. ¡Te notificaremos cuando esté listo!");
+        return ResponseEntity.ok("Analysis started in the background. We will notify you when it is ready!");
     }
 }

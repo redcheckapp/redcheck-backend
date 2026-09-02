@@ -92,7 +92,7 @@ public class SubjectServiceTest {
             // THEN
             assertFalse(result.isEmpty());
             assertEquals(1, result.size());
-            assertEquals(mockSubject.getId(), result.get(0).getId());
+            assertEquals(mockSubject.getId(), result.get(0).id());
             verify(subjectRepository, times(1)).findAllByUserAndDeletedFalse(user);
         }
     }
@@ -105,7 +105,7 @@ public class SubjectServiceTest {
         @DisplayName("When subject does not exist should save and return subject")
         void createSubject_WhenSubjectDoesNotExist_ShouldSaveAndReturnSubject() {
             // GIVEN
-            when(subjectRepository.existsByNameAndUser(mockRequestSubjectDTO.getName(), user))
+            when(subjectRepository.existsByNameAndUser(mockRequestSubjectDTO.name(), user))
                     .thenReturn(false);
 
             when(subjectRepository.save(any(Subject.class)))
@@ -116,7 +116,7 @@ public class SubjectServiceTest {
 
             // THEN
             assertNotNull(result);
-            verify(subjectRepository, times(1)).existsByNameAndUser(mockRequestSubjectDTO.getName(), user);
+            verify(subjectRepository, times(1)).existsByNameAndUser(mockRequestSubjectDTO.name(), user);
             verify(subjectRepository, times(1)).save(any(Subject.class));
         }
 
@@ -124,7 +124,7 @@ public class SubjectServiceTest {
         @DisplayName("When subject exists should throw exception")
         void createSubject_WhenSubjectExists_ShouldThrowException() {
             // GIVEN
-            when(subjectRepository.existsByNameAndUser(mockRequestSubjectDTO.getName(), user))
+            when(subjectRepository.existsByNameAndUser(mockRequestSubjectDTO.name(), user))
                     .thenReturn(true);
 
             // WHEN
@@ -133,7 +133,7 @@ public class SubjectServiceTest {
             });
 
             // THEN
-            verify(subjectRepository, times(1)).existsByNameAndUser(mockRequestSubjectDTO.getName(), user);
+            verify(subjectRepository, times(1)).existsByNameAndUser(mockRequestSubjectDTO.name(), user);
             verify(subjectRepository, never()).save(any(Subject.class));
         }
     }
@@ -149,7 +149,7 @@ public class SubjectServiceTest {
             when(subjectRepository.findById(mockSubject.getId()))
                     .thenReturn(Optional.of(mockSubject));
 
-            when(subjectRepository.existsByNameAndUserAndIdNot(mockRequestSubjectDTO.getName(), user, mockSubject.getId()))
+            when(subjectRepository.existsByNameAndUserAndIdNot(mockRequestSubjectDTO.name(), user, mockSubject.getId()))
                     .thenReturn(false);
 
             // WHEN
@@ -157,10 +157,10 @@ public class SubjectServiceTest {
 
             // THEN
             assertNotNull(result);
-            assertEquals(result.getName(), mockRequestSubjectDTO.getName());
-            assertEquals(result.getDescription(), mockRequestSubjectDTO.getDescription());
+            assertEquals(result.name(), mockRequestSubjectDTO.name());
+            assertEquals(result.description(), mockRequestSubjectDTO.description());
             verify(subjectRepository, times(1)).findById(mockSubject.getId());
-            verify(subjectRepository, times(1)).existsByNameAndUserAndIdNot(mockRequestSubjectDTO.getName(), user, mockSubject.getId());
+            verify(subjectRepository, times(1)).existsByNameAndUserAndIdNot(mockRequestSubjectDTO.name(), user, mockSubject.getId());
             verify(subjectRepository, times(1)).save(any(Subject.class));
         }
 
@@ -178,7 +178,7 @@ public class SubjectServiceTest {
 
             // THEN
             verify(subjectRepository, times(1)).findById(mockSubject.getId());
-            verify(subjectRepository, never()).existsByNameAndUserAndIdNot(mockRequestSubjectDTO.getName(), hacker, mockSubject.getId());
+            verify(subjectRepository, never()).existsByNameAndUserAndIdNot(mockRequestSubjectDTO.name(), hacker, mockSubject.getId());
             verify(subjectRepository, never()).save(any(Subject.class));
         }
 
@@ -286,9 +286,9 @@ public class SubjectServiceTest {
 
             // THEN
             assertNotNull(result);
-            assertEquals(result.getName(), mockSubject.getName());
-            assertEquals(result.getDescription(), mockSubject.getDescription());
-            assertTrue(result.isArchived());
+            assertEquals(result.name(), mockSubject.getName());
+            assertEquals(result.description(), mockSubject.getDescription());
+            assertTrue(result.archived());
             verify(subjectRepository, times(1)).findById(mockSubject.getId());
             verify(subjectRepository, times(1)).save(any(Subject.class));
         }

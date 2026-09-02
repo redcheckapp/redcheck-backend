@@ -15,12 +15,16 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(exclude = "user")
 public class AiResponse {
 
-    public enum Type {DAILY_ANALYSIS, DISORGANIZATION_RISK}
+    public enum Type {
+        DAILY_ANALYSIS,
+        DISORGANIZATION_RISK
+    }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Type type;
 

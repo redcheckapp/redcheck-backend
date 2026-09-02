@@ -3,12 +3,14 @@ package com.redcheck.backend.config;
 import com.redcheck.backend.entity.User;
 import com.redcheck.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
@@ -27,7 +29,7 @@ public class DataInitializer implements CommandLineRunner {
             demoUserEs.setCreationDate(LocalDateTime.now());
 
             userRepository.save(demoUserEs);
-            System.out.println("Usuario de demostración (ES) creado con éxito.");
+            log.info("Demo user (ES) created successfully.");
         }
 
         if (!userRepository.existsByEmail("demo-en@redcheck.com")) {
@@ -38,7 +40,7 @@ public class DataInitializer implements CommandLineRunner {
             demoUserEn.setCreationDate(LocalDateTime.now());
 
             userRepository.save(demoUserEn);
-            System.out.println("Usuario de demostración (EN) creado con éxito.");
+            log.info("Demo user (EN) created successfully.");
         }
     }
 }

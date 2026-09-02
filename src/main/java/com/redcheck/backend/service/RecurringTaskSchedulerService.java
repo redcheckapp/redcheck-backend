@@ -7,6 +7,7 @@ import com.redcheck.backend.repository.TaskRepository;
 import com.redcheck.backend.util.FrequencyUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -14,6 +15,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RecurringTaskSchedulerService {
@@ -23,11 +25,12 @@ public class RecurringTaskSchedulerService {
 
     @Transactional
     @Scheduled(cron = "0 0 0 * * *")
-    public void generateTask(){
+    public void generateTask() {
+        log.info("Starting generation of recurring tasks...");
         List<RecurringTask> activeTasks = recurringTaskRepository.findAllByActiveTrue();
 
-        for(RecurringTask recurringTask : activeTasks){
-            if(shouldGenerate(recurringTask)){
+        for (RecurringTask recurringTask : activeTasks) {
+            if (shouldGenerate(recurringTask)) {
                 Task task = Task.builder()
                         .title(recurringTask.getTitle())
                         .description(recurringTask.getDescription())
@@ -40,10 +43,13 @@ public class RecurringTaskSchedulerService {
                 recurringTaskRepository.save(recurringTask);
             }
         }
+        log.info("Recurring tasks generation completed.");
     }
 
     private boolean shouldGenerate(RecurringTask recurringTask) {
-        if (recurringTask.getLatestGeneratedDate() == null) return true;
+        if (recurringTask.getLatestGeneratedDate() == null) {
+            return true;
+        }
 
         LocalDateTime next = FrequencyUtils.nextExecution(
                 recurringTask.getFrequency(),
@@ -52,11 +58,11 @@ public class RecurringTaskSchedulerService {
 
         if (!LocalDateTime.now().isBefore(next)) {
 
-            // Searches the latest generated task associated
+            // Search for the latest associated task generated
             Optional<Task> lastTask = taskRepository
                     .findTopByRecurringTaskAndDeletedFalseOrderByAssignedDateDesc(recurringTask);
 
-            // If it exists and its not completed, updates the date but not generates
+            // If it exists and is not completed, update the generation date without creating a duplicate
             if (lastTask.isPresent() && lastTask.get().getCompletedDate() == null) {
                 recurringTask.setLatestGeneratedDate(LocalDateTime.now());
                 recurringTaskRepository.save(recurringTask);

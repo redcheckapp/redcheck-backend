@@ -13,7 +13,7 @@ public class UserService {
     private final UserRepository userRepository;
 
     @Transactional
-    public void deleteUser(String email){
+    public void deleteUser(String email) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 

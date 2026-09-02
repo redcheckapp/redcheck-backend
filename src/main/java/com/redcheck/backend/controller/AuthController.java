@@ -5,25 +5,24 @@ import com.redcheck.backend.dto.request.RegisterRequestDTO;
 import com.redcheck.backend.dto.response.AuthResponseDTO;
 import com.redcheck.backend.service.AuthService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*") // So React can call this API
+@CrossOrigin(origins = "${app.cors.allowed-origins}")
 public class AuthController {
 
     private final AuthService authService;
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody RegisterRequestDTO requestDTO){
+    public ResponseEntity<?> register(@RequestBody RegisterRequestDTO requestDTO) {
         return ResponseEntity.ok(authService.register(requestDTO));
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponseDTO> login(@RequestBody LoginRequestDTO requestDTO){
+    public ResponseEntity<AuthResponseDTO> login(@RequestBody LoginRequestDTO requestDTO) {
         return ResponseEntity.ok(authService.login(requestDTO));
     }
 }

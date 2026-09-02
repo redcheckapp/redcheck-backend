@@ -10,12 +10,12 @@ import java.util.Optional;
 
 public interface ProgressRecordRepository extends JpaRepository<ProgressRecord, Long> {
 
-    // Heatmap query --> last year
+    // Retrieve progress records for the heatmap (default: last year)
     List<ProgressRecord> findAllByUserAndDateBetweenOrderByDateAsc(User user, LocalDate from, LocalDate to);
 
-    // Daily progress circle
+    // Find the progress record for a specific date
     Optional<ProgressRecord> findByUserAndDate(User user, LocalDate date);
 
-    // Avoid duplicates generating daily record
+    // Check if a daily progress record already exists for the given date
     boolean existsByUserAndDate(User user, LocalDate date);
 }

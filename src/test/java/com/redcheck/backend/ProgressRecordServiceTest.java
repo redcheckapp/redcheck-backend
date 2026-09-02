@@ -83,10 +83,10 @@ public class ProgressRecordServiceTest {
             assertEquals(1, result.size());
 
             ProgressRecordResponseDTO dto = result.get(0);
-            assertEquals(testDate, dto.getDate());
-            assertEquals(10, dto.getTotalTasks());
-            assertEquals(5, dto.getCompletedTasks());
-            assertEquals(0.5, dto.getCompletionRate());
+            assertEquals(testDate, dto.date());
+            assertEquals(10, dto.totalTasks());
+            assertEquals(5, dto.completedTasks());
+            assertEquals(0.5, dto.completionRate());
             verify(progressRecordRepository, times(1))
                     .findAllByUserAndDateBetweenOrderByDateAsc(eq(user), any(LocalDate.class), any(LocalDate.class));
         }
@@ -108,10 +108,10 @@ public class ProgressRecordServiceTest {
 
             // THEN
             assertNotNull(result);
-            assertEquals(testDate, result.getDate());
-            assertEquals(10, result.getTotalTasks());
-            assertEquals(5, result.getCompletedTasks());
-            assertEquals(0.5, result.getCompletionRate());
+            assertEquals(testDate, result.date());
+            assertEquals(10, result.totalTasks());
+            assertEquals(5, result.completedTasks());
+            assertEquals(0.5, result.completionRate());
             verify(progressRecordRepository, times(1)).findByUserAndDate(user, testDate);
         }
 
@@ -127,10 +127,10 @@ public class ProgressRecordServiceTest {
 
             // THEN
             assertNotNull(result);
-            assertEquals(testDate, result.getDate());
-            assertEquals(0, result.getTotalTasks());
-            assertEquals(0, result.getCompletedTasks());
-            assertEquals(0.0, result.getCompletionRate());
+            assertEquals(testDate, result.date());
+            assertEquals(0, result.totalTasks());
+            assertEquals(0, result.completedTasks());
+            assertEquals(0.0, result.completionRate());
             verify(progressRecordRepository, times(1)).findByUserAndDate(user, testDate);
         }
     }

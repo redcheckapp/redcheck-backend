@@ -17,7 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/subjects/{subjectId}/recurring-tasks")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "${app.cors.allowed-origins}")
 public class RecurringTaskController {
 
     private final RecurringTaskService recurringTaskService;
@@ -26,7 +26,7 @@ public class RecurringTaskController {
     public ResponseEntity<List<RecurringTaskResponseDTO>> getAll(
             @AuthenticationPrincipal User currentUser,
             @PathVariable Long subjectId,
-            @RequestParam(required = false) Boolean active){
+            @RequestParam(required = false) Boolean active) {
 
         List<RecurringTaskResponseDTO> response = recurringTaskService.getAllRecurringTask(currentUser, subjectId, active);
         return ResponseEntity.ok(response);
@@ -36,7 +36,7 @@ public class RecurringTaskController {
     public ResponseEntity<RecurringTaskResponseDTO> create(
             @PathVariable Long subjectId,
             @Valid @RequestBody RecurringTaskRequestDTO requestDTO,
-            @AuthenticationPrincipal User currentUser){
+            @AuthenticationPrincipal User currentUser) {
 
         RecurringTaskResponseDTO response = recurringTaskService.createRecurringTask(subjectId, requestDTO, currentUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -47,7 +47,7 @@ public class RecurringTaskController {
             @PathVariable Long subjectId,
             @PathVariable Long recurringTaskId,
             @Valid @RequestBody RecurringTaskRequestDTO requestDTO,
-            @AuthenticationPrincipal User currentUser){
+            @AuthenticationPrincipal User currentUser) {
 
         RecurringTaskResponseDTO response = recurringTaskService.updateRecurringTask(subjectId, recurringTaskId, requestDTO, currentUser);
         return ResponseEntity.ok(response);
@@ -57,7 +57,7 @@ public class RecurringTaskController {
     public ResponseEntity<Void> delete(
             @PathVariable Long subjectId,
             @PathVariable Long recurringTaskId,
-            @AuthenticationPrincipal User currentUser){
+            @AuthenticationPrincipal User currentUser) {
 
         recurringTaskService.deleteRecurringTask(subjectId, recurringTaskId, currentUser);
         return ResponseEntity.noContent().build();
@@ -68,7 +68,7 @@ public class RecurringTaskController {
             @PathVariable Long subjectId,
             @PathVariable Long recurringTaskId,
             @Valid @RequestBody RecurringTaskActiveDTO requestDTO,
-            @AuthenticationPrincipal User currentUser){
+            @AuthenticationPrincipal User currentUser) {
 
         RecurringTaskResponseDTO response = recurringTaskService.activateRecurringTask(subjectId, recurringTaskId, requestDTO, currentUser);
         return ResponseEntity.ok(response);

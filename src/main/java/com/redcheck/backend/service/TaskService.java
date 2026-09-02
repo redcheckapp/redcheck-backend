@@ -1,6 +1,5 @@
 package com.redcheck.backend.service;
 
-import com.redcheck.backend.dto.response.SubjectResponseDTO;
 import com.redcheck.backend.dto.update.TaskCompleteDTO;
 import com.redcheck.backend.dto.request.TaskRequestDTO;
 import com.redcheck.backend.dto.response.TaskResponseDTO;
@@ -39,10 +38,10 @@ public class TaskService {
             rawTasks = taskRepository.findAllBySubject_User_IdAndDeletedTrue(currentUser.getId());
         }
         // 2. Normal filters (ensuring trash is excluded with AndDeletedFalse)
-        else if (overdue != null && overdue){
+        else if (overdue != null && overdue) {
             rawTasks = taskRepository.findAllBySubject_User_IdAndDeadlineBeforeAndCompletedDateIsNullAndDeletedFalse(
                     currentUser.getId(), LocalDateTime.now());
-        } else if (completed != null && completed){
+        } else if (completed != null && completed) {
             rawTasks = taskRepository.findAllBySubject_User_IdAndCompletedDateIsNotNullAndDeletedFalse(currentUser.getId());
         } else if (completed != null && !completed) {
             LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
@@ -54,26 +53,27 @@ public class TaskService {
             rawTasks = taskRepository.findAllBySubject_User_IdAndDeletedFalse(currentUser.getId());
         }
 
-        // At this moment, only subjectId remains in memory, a simple field
+        // At this point, only the subjectId filter is applied in memory
         return rawTasks.stream()
                 .map(this::toResponseDTO)
-                .filter(task -> subjectId == null || task.getSubjectId().equals(subjectId))
+                .filter(task -> subjectId == null || task.subjectId().equals(subjectId))
                 .collect(Collectors.toList());
     }
 
     @Transactional
-    public TaskResponseDTO createTask(Long subjectId, TaskRequestDTO requestDTO, User currentUser){
+    public TaskResponseDTO createTask(Long subjectId, TaskRequestDTO requestDTO, User currentUser) {
 
         Subject subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new SubjectNotFoundException(subjectId));
 
-        if(!subject.getUser().getId().equals(currentUser.getId()))
+        if (!subject.getUser().getId().equals(currentUser.getId())) {
             throw new SubjectNotOwnedException();
+        }
 
         Task task = Task.builder()
-                .title(requestDTO.getTitle())
-                .description(requestDTO.getDescription())
-                .deadline(requestDTO.getDeadline())
+                .title(requestDTO.title())
+                .description(requestDTO.description())
+                .deadline(requestDTO.deadline())
                 .subject(subject)
                 .build();
 
@@ -82,20 +82,20 @@ public class TaskService {
     }
 
     @Transactional
-    public TaskResponseDTO updateTask(Long subjectId, Long taskId, TaskRequestDTO requestDTO, User currentUser){
+    public TaskResponseDTO updateTask(Long subjectId, Long taskId, TaskRequestDTO requestDTO, User currentUser) {
 
         Task task = getOwnedTask(subjectId, taskId, currentUser);
 
-        task.setTitle(requestDTO.getTitle());
-        task.setDescription(requestDTO.getDescription());
-        task.setDeadline(requestDTO.getDeadline());
+        task.setTitle(requestDTO.title());
+        task.setDescription(requestDTO.description());
+        task.setDeadline(requestDTO.deadline());
 
         taskRepository.save(task);
         return toResponseDTO(task);
     }
 
     @Transactional
-    public void deleteTask(Long subjectId, Long taskId, User currentUser){
+    public void deleteTask(Long subjectId, Long taskId, User currentUser) {
         Task task = getOwnedTask(subjectId, taskId, currentUser);
 
         task.setDeleted(true);
@@ -104,17 +104,18 @@ public class TaskService {
     }
 
     @Transactional
-    public void hardDeleteTask(Long subjectId, Long taskId, User currentUser){
+    public void hardDeleteTask(Long subjectId, Long taskId, User currentUser) {
         Task task = getOwnedTask(subjectId, taskId, currentUser);
 
-        if(!task.isDeleted())
+        if (!task.isDeleted()) {
             throw new IllegalStateException("The task must be in the recycle bin in order to be deleted");
+        }
 
         taskRepository.delete(task);
     }
 
     @Transactional
-    public TaskResponseDTO restoreTask(Long subjectId, Long taskId, User currentUser){
+    public TaskResponseDTO restoreTask(Long subjectId, Long taskId, User currentUser) {
         Task task = getOwnedTask(subjectId, taskId, currentUser);
 
         task.setDeleted(false);
@@ -125,14 +126,15 @@ public class TaskService {
     }
 
     @Transactional
-    public TaskResponseDTO markTaskAsCompleted(Long subjectId, Long taskId, TaskCompleteDTO requestDTO, User currentUser){
+    public TaskResponseDTO markTaskAsCompleted(Long subjectId, Long taskId, TaskCompleteDTO requestDTO, User currentUser) {
 
         Task task = getOwnedTask(subjectId, taskId, currentUser);
 
-        if(requestDTO.isCompleted())
+        if (requestDTO.completed()) {
             task.setCompletedDate(LocalDateTime.now());
-        else
+        } else {
             task.setCompletedDate(null);
+        }
 
         taskRepository.save(task);
         return toResponseDTO(task);
@@ -140,24 +142,26 @@ public class TaskService {
 
     // --- Auxiliary methods ---
 
-    private Task getOwnedTask(Long subjectId, Long taskId, User currentUser){
+    private Task getOwnedTask(Long subjectId, Long taskId, User currentUser) {
         Subject subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new SubjectNotFoundException(subjectId));
 
-        if(!subject.getUser().getId().equals(currentUser.getId()))
+        if (!subject.getUser().getId().equals(currentUser.getId())) {
             throw new SubjectNotOwnedException();
+        }
 
         Task task = taskRepository.findById(taskId)
                 .orElseThrow(() -> new TaskNotFoundException(taskId));
 
-        if(!task.getSubject().getId().equals(subjectId))
+        if (!task.getSubject().getId().equals(subjectId)) {
             throw new TaskNotOwnedException();
+        }
 
         return task;
     }
 
-    private TaskResponseDTO toResponseDTO(Task task){
-        // Calculates if its overdue based on server hour
+    private TaskResponseDTO toResponseDTO(Task task) {
+        // Calculate if the task is overdue based on the server time
         boolean isOverdue = task.getDeadline() != null
                             && task.getDeadline().isBefore(LocalDateTime.now())
                             && task.getCompletedDate() == null;
@@ -175,5 +179,4 @@ public class TaskService {
                 .subjectId(task.getSubject().getId())
                 .build();
     }
-
 }

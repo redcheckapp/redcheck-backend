@@ -13,7 +13,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/notifications")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "${app.cors.allowed-origins}")
 public class NotificationController {
 
     private final NotificationService notificationService;
@@ -21,7 +21,7 @@ public class NotificationController {
     @GetMapping
     public ResponseEntity<List<NotificationResponseDTO>> getNotifications(
             @AuthenticationPrincipal User currentUser,
-            @RequestParam(required = false) Boolean read){
+            @RequestParam(required = false) Boolean read) {
 
         List<NotificationResponseDTO> response = notificationService.getNotifications(currentUser, read);
         return ResponseEntity.ok(response);

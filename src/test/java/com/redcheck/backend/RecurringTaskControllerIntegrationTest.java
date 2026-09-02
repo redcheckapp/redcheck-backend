@@ -128,8 +128,14 @@ public class RecurringTaskControllerIntegrationTest {
         @DisplayName("With invalid data should return bad request")
         void create_WithInvalidData_ShouldReturnBadRequest() throws Exception {
             // GIVEN:
-            requestDTO.setTitle(null);
-            String jsonRequest = objectMapper.writeValueAsString(requestDTO);
+            RecurringTaskRequestDTO invalidRequestDTO = RecurringTaskRequestDTO.builder()
+                    .title(null)
+                    .description("Review chapters")
+                    .frequency("WEEKLY")
+                    .subjectId(SUBJECT_ID)
+                    .build();
+
+            String jsonRequest = objectMapper.writeValueAsString(invalidRequestDTO);
 
             // WHEN & THEN
             mockMvc.perform(post(BASE_URL)
@@ -194,10 +200,17 @@ public class RecurringTaskControllerIntegrationTest {
         @DisplayName("When valid should update active status and return ok")
         void active_WhenValid_ShouldReturnOk() throws Exception {
             // GIVEN
-            responseDTO.setActive(false);
+            RecurringTaskResponseDTO inactiveResponseDTO = RecurringTaskResponseDTO.builder()
+                    .id(RECURRING_TASK_ID)
+                    .title("Study Math")
+                    .description("Review chapters")
+                    .frequency("WEEKLY")
+                    .active(false)
+                    .subjectId(SUBJECT_ID)
+                    .build();
 
             when(recurringTaskService.activateRecurringTask(eq(SUBJECT_ID), eq(RECURRING_TASK_ID), any(RecurringTaskActiveDTO.class), any()))
-                    .thenReturn(responseDTO);
+                    .thenReturn(inactiveResponseDTO);
 
             String jsonRequest = objectMapper.writeValueAsString(activeDTO);
 

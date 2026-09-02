@@ -110,7 +110,7 @@ class TaskServiceTest {
             // THEN: The list should contain the mapped DTO
             assertFalse(result.isEmpty());
             assertEquals(1, result.size());
-            assertEquals(mockTask.getId(), result.get(0).getId());
+            assertEquals(mockTask.getId(), result.get(0).id());
             verify(taskRepository, times(1)).findAllBySubject_User_IdAndDeletedFalse(user.getId());        }
     }
 
@@ -130,7 +130,7 @@ class TaskServiceTest {
 
             // THEN: Task is saved and returned as DTO
             assertNotNull(result);
-            assertEquals(mockSubject.getId(), result.getSubjectId());
+            assertEquals(mockSubject.getId(), result.subjectId());
             verify(subjectRepository, times(1)).findById(mockSubject.getId());
             verify(taskRepository, times(1)).save(any(Task.class));
         }
@@ -192,9 +192,9 @@ class TaskServiceTest {
 
             // THEN: The task properties should be updated and saved
             assertNotNull(result);
-            assertEquals(result.getTitle(), mockRequestTaskDTO.getTitle());
-            assertEquals(result.getDescription(), mockRequestTaskDTO.getDescription());
-            assertEquals(result.getDeadline(), mockRequestTaskDTO.getDeadline());
+            assertEquals(result.title(), mockRequestTaskDTO.title());
+            assertEquals(result.description(), mockRequestTaskDTO.description());
+            assertEquals(result.deadline(), mockRequestTaskDTO.deadline());
             verify(subjectRepository, times(1)).findById(mockSubject.getId());
             verify(taskRepository, times(1)).findById(mockTask.getId());
             verify(taskRepository, times(1)).save(any(Task.class));
@@ -322,7 +322,7 @@ class TaskServiceTest {
 
             // THEN: The task properties should be updated and saved
             assertNotNull(result);
-            assertNotNull(result.getCompletedDate());
+            assertNotNull(result.completedDate());
             verify(subjectRepository, times(1)).findById(mockSubject.getId());
             verify(taskRepository, times(1)).findById(mockTask.getId());
             verify(taskRepository, times(1)).save(any(Task.class));
@@ -343,7 +343,7 @@ class TaskServiceTest {
 
             // THEN: The task properties should be updated and saved
             assertNotNull(result);
-            assertNull(result.getCompletedDate());
+            assertNull(result.completedDate());
             verify(subjectRepository, times(1)).findById(mockSubject.getId());
             verify(taskRepository, times(1)).findById(mockTask.getId());
             verify(taskRepository, times(1)).save(any(Task.class));

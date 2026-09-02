@@ -10,13 +10,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 
 import java.time.LocalDate;
 import java.util.Collections;
@@ -78,15 +79,12 @@ public class ProgressRecordControllerIntegrationTest {
         @Test
         @DisplayName("When authenticated should return ok and JSON array of records")
         void getHeatmap_ShouldReturnOkAndJsonArray() throws Exception {
-            // GIVEN:
             when(progressRecordService.getHeatmap(any(User.class)))
                     .thenReturn(Collections.singletonList(progressRecordResponseDTO));
 
-            // WHEN & THEN:
             mockMvc.perform(get("/progress/heatmap")
                             .with(authentication(mockAuthToken))
                             .contentType(MediaType.APPLICATION_JSON))
-
                     .andExpect(status().isOk())
                     .andExpect(MockMvcResultMatchers.content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                     .andExpect(MockMvcResultMatchers.jsonPath("$").isArray())
@@ -104,16 +102,13 @@ public class ProgressRecordControllerIntegrationTest {
         @Test
         @DisplayName("When authenticated and valid date should return ok and record DTO")
         void getByDay_ShouldReturnOkAndRecordDTO() throws Exception {
-            // GIVEN:
             when(progressRecordService.getDayProgress(any(User.class), eq(testDate)))
                     .thenReturn(progressRecordResponseDTO);
 
-            // WHEN & THEN:
             mockMvc.perform(get("/progress/day")
-                            .param("date", testDate.toString()) // Añadimos el @RequestParam
+                            .param("date", testDate.toString())
                             .with(authentication(mockAuthToken))
                             .contentType(MediaType.APPLICATION_JSON))
-
                     .andExpect(status().isOk())
                     .andExpect(MockMvcResultMatchers.content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                     .andExpect(MockMvcResultMatchers.jsonPath("$.totalTasks").value(10))
@@ -125,13 +120,9 @@ public class ProgressRecordControllerIntegrationTest {
         @Test
         @DisplayName("When date param is missing should return bad request")
         void getByDay_WhenDateMissing_ShouldReturnBadRequest() throws Exception {
-            // GIVEN:
-
-            // WHEN & THEN:
             mockMvc.perform(get("/progress/day")
                             .with(authentication(mockAuthToken))
                             .contentType(MediaType.APPLICATION_JSON))
-
                     .andExpect(status().isBadRequest());
         }
     }

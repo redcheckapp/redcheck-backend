@@ -11,13 +11,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import tools.jackson.databind.ObjectMapper;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
@@ -26,7 +26,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(AuthController.class)
-@AutoConfigureMockMvc(addFilters = false) // The endpoints we're testing are public
+@AutoConfigureMockMvc(addFilters = false)
 @DisplayName("Integration Tests - AuthController")
 public class AuthControllerIntegrationTest {
 
@@ -72,18 +72,15 @@ public class AuthControllerIntegrationTest {
         @Test
         @DisplayName("With valid data should return ok status and token")
         void register_WithValidData_ShouldReturnOkAndToken() throws Exception {
-            // GIVEN:
             when(authService.register(any(RegisterRequestDTO.class)))
                     .thenReturn(authResponseDTO);
 
             String jsonRequest = objectMapper.writeValueAsString(registerRequestDTO);
 
-            // WHEN & THEN:
             mockMvc.perform(post("/auth/register")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(jsonRequest))
-
                     .andExpect(status().isOk())
                     .andExpect(MockMvcResultMatchers.jsonPath("$.token").value(MOCK_TOKEN));
         }
@@ -96,18 +93,15 @@ public class AuthControllerIntegrationTest {
         @Test
         @DisplayName("With valid credentials should return ok status and token")
         void login_WithValidCredentials_ShouldReturnOkAndToken() throws Exception {
-            // GIVEN:
             when(authService.login(any(LoginRequestDTO.class)))
                     .thenReturn(authResponseDTO);
 
             String jsonRequest = objectMapper.writeValueAsString(loginRequestDTO);
 
-            // WHEN & THEN:
             mockMvc.perform(post("/auth/login")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(jsonRequest))
-
                     .andExpect(status().isOk())
                     .andExpect(MockMvcResultMatchers.jsonPath("$.token").value(MOCK_TOKEN));
         }

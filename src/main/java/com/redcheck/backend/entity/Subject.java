@@ -24,8 +24,10 @@ public class Subject {
 
     private String description;
 
+    @Builder.Default
     private boolean archived = false;
 
+    @Builder.Default
     @Column(nullable = false)
     private boolean deleted = false;
 
@@ -40,6 +42,7 @@ public class Subject {
 
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @Builder.Default
     @OneToMany(mappedBy = "subject", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Task> tasks = new ArrayList<>();
 }

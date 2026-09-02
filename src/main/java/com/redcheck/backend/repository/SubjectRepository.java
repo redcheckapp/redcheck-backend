@@ -22,6 +22,8 @@ public interface SubjectRepository extends JpaRepository<Subject, Long> {
     void deleteTrashOlderThan(LocalDateTime cutoffDate);
 
     List<Subject> findAllByUserAndDeletedTrue(User user);
+
     List<Subject> findAllByUserAndDeletedFalse(User user);
+
     List<Subject> findAllByUserAndArchivedAndDeletedFalse(User user, boolean archived);
 }

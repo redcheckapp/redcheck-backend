@@ -10,13 +10,14 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -77,15 +78,12 @@ public class NotificationControllerIntegrationTest {
         @Test
         @DisplayName("When no 'read' param is provided should return ok and all notifications")
         void getNotifications_WhenNoReadParamProvided_ShouldReturnAllNotifications() throws Exception {
-            // GIVEN:
             when(notificationService.getNotifications(any(User.class), isNull()))
                     .thenReturn(Collections.singletonList(notificationResponseDTO));
 
-            // WHEN & THEN:
             mockMvc.perform(get("/notifications")
                             .with(authentication(mockAuthToken))
                             .contentType(MediaType.APPLICATION_JSON))
-
                     .andExpect(status().isOk())
                     .andExpect(MockMvcResultMatchers.content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                     .andExpect(MockMvcResultMatchers.jsonPath("$").isArray())
@@ -98,17 +96,14 @@ public class NotificationControllerIntegrationTest {
         @Test
         @DisplayName("When 'read' param is provided should return ok and filtered notifications")
         void getNotifications_WhenReadParamProvided_ShouldReturnFilteredNotifications() throws Exception {
-            // GIVEN:
             Boolean readParam = false;
             when(notificationService.getNotifications(any(User.class), eq(readParam)))
                     .thenReturn(Collections.singletonList(notificationResponseDTO));
 
-            // WHEN & THEN:
             mockMvc.perform(get("/notifications")
-                            .param("read", readParam.toString()) // Añadimos el RequestParam
+                            .param("read", readParam.toString())
                             .with(authentication(mockAuthToken))
                             .contentType(MediaType.APPLICATION_JSON))
-
                     .andExpect(status().isOk())
                     .andExpect(MockMvcResultMatchers.content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
                     .andExpect(MockMvcResultMatchers.jsonPath("$").isArray())

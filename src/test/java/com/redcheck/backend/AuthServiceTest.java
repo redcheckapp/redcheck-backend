@@ -21,7 +21,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.OptionalInt;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -80,7 +79,7 @@ public class AuthServiceTest {
         @DisplayName("When data is valid should register user and return token")
         void register_WhenDataIsValid_ShouldRegisterUserAndReturnToken() {
             // GIVEN
-            when(userRepository.existsByEmail(mockRegisterRequest.getEmail()))
+            when(userRepository.existsByEmail(mockRegisterRequest.email()))
                     .thenReturn(false);
 
             when(jwtService.generateToken(mockUser))
@@ -91,8 +90,8 @@ public class AuthServiceTest {
 
             // THEN
             assertNotNull(result);
-            assertEquals(MOCK_TOKEN, result.getToken());
-            verify(userRepository, times(1)).existsByEmail(mockRegisterRequest.getEmail());
+            assertEquals(MOCK_TOKEN, result.token());
+            verify(userRepository, times(1)).existsByEmail(mockRegisterRequest.email());
             verify(jwtService, times(1)).generateToken(mockUser);
             verify(userRepository, times(1)).save(any(User.class));
         }
@@ -101,7 +100,7 @@ public class AuthServiceTest {
         @DisplayName("When email already exists should throw exception")
         void register_WhenEmailExists_ShouldThrowException() {
             // GIVEN
-            when(userRepository.existsByEmail(mockRegisterRequest.getEmail()))
+            when(userRepository.existsByEmail(mockRegisterRequest.email()))
                     .thenReturn(true);
 
             // WHEN
@@ -110,7 +109,7 @@ public class AuthServiceTest {
             });
 
             // THEN
-            verify(userRepository, times(1)).existsByEmail(mockRegisterRequest.getEmail());
+            verify(userRepository, times(1)).existsByEmail(mockRegisterRequest.email());
             verify(jwtService, never()).generateToken(mockUser);
             verify(userRepository, never()).save(any(User.class));        }
     }
@@ -134,9 +133,9 @@ public class AuthServiceTest {
 
             // THEN
             assertNotNull(result);
-            assertEquals(MOCK_TOKEN, result.getToken());
+            assertEquals(MOCK_TOKEN, result.token());
             verify(authenticationManager, times(1)).authenticate(any(UsernamePasswordAuthenticationToken.class));
-            verify(userRepository, times(1)).findByEmail(mockRegisterRequest.getEmail());
+            verify(userRepository, times(1)).findByEmail(mockRegisterRequest.email());
             verify(jwtService, times(1)).generateToken(mockUser);
         }
 
