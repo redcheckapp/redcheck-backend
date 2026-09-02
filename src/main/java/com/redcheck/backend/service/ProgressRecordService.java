@@ -23,7 +23,7 @@ public class ProgressRecordService {
     private final TaskRepository taskRepository;
 
     // Heatmap of the last year (by default)
-    public List<ProgressRecordResponseDTO> getHeatmap(User currentUser){
+    public List<ProgressRecordResponseDTO> getHeatmap(User currentUser) {
         LocalDate from = LocalDate.now().minusYears(1);
         LocalDate to = LocalDate.now();
 
@@ -34,7 +34,7 @@ public class ProgressRecordService {
                 .collect(Collectors.toList());
     }
 
-    public ProgressRecordResponseDTO getDayProgress(User currentUser, LocalDate date){
+    public ProgressRecordResponseDTO getDayProgress(User currentUser, LocalDate date) {
         return progressRecordRepository
                 .findByUserAndDate(currentUser, date)
                 .map(this::toResponseDTO)
@@ -42,10 +42,12 @@ public class ProgressRecordService {
     }
 
     @Transactional
-    public void generateDailyRecord(User user){
+    public void generateDailyRecord(User user) {
         LocalDate today = LocalDate.now();
 
-        if(progressRecordRepository.existsByUserAndDate(user, today)) return;
+        if (progressRecordRepository.existsByUserAndDate(user, today)) {
+            return;
+        }
 
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime endOfDay = today.atTime(LocalTime.MAX);
@@ -69,19 +71,19 @@ public class ProgressRecordService {
 
     // --- Auxiliary methods ---
 
-    private ProgressRecordResponseDTO toResponseDTO(ProgressRecord progressRecord){
+    private ProgressRecordResponseDTO toResponseDTO(ProgressRecord progressRecord) {
         double rate = progressRecord.getTotalTasks() == 0 ? 0.0
-                : (double) progressRecord.getCompletedTasks()/ progressRecord.getTotalTasks();
+                : (double) progressRecord.getCompletedTasks() / progressRecord.getTotalTasks();
 
         return ProgressRecordResponseDTO.builder()
                 .date(progressRecord.getDate())
                 .totalTasks(progressRecord.getTotalTasks())
                 .completedTasks(progressRecord.getCompletedTasks())
-                .completionRate(Math.round(rate * 10.0)/ 10.0)
+                .completionRate(Math.round(rate * 10.0) / 10.0)
                 .build();
     }
 
-    private ProgressRecordResponseDTO emptyRecord(LocalDate date){
+    private ProgressRecordResponseDTO emptyRecord(LocalDate date) {
         return ProgressRecordResponseDTO.builder()
                 .date(date)
                 .totalTasks(0)
