@@ -9,12 +9,12 @@ public class FrequencyUtils {
             "DAILY", "WEEKLY", "BIWEEKLY", "MONTHLY"
     );
 
-    public static boolean isSimple(String frequency){
+    public static boolean isSimple(String frequency) {
         return SIMPLE_VALUES.contains(frequency);
     }
 
-    public static LocalDateTime nextExecution(String frequency, LocalDateTime from){
-        return switch(frequency){
+    public static LocalDateTime nextExecution(String frequency, LocalDateTime from) {
+        return switch(frequency) {
             case "DAILY" -> from.plusDays(1);
             case "WEEKLY" -> from.plusWeeks(1);
             case "BIWEEKLY" -> from.plusWeeks(2);
