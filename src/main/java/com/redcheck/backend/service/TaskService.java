@@ -56,7 +56,7 @@ public class TaskService {
         // At this point, only the subjectId filter is applied in memory
         return rawTasks.stream()
                 .map(this::toResponseDTO)
-                .filter(task -> subjectId == null || task.getSubjectId().equals(subjectId))
+                .filter(task -> subjectId == null || task.subjectId().equals(subjectId))
                 .collect(Collectors.toList());
     }
 

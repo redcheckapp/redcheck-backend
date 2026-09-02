@@ -38,7 +38,7 @@ public class RecurringTaskService {
         // At this point, only the subjectId filter is applied in memory
         return rawRecurringTask.stream()
                 .map(this::toResponseDTO)
-                .filter(recurringTask -> subjectId == null || recurringTask.getSubjectId().equals(subjectId))
+                .filter(recurringTask -> subjectId == null || recurringTask.subjectId().equals(subjectId))
                 .collect(Collectors.toList());
     }
 
@@ -69,8 +69,8 @@ public class RecurringTaskService {
 
         RecurringTask recurringTask = getOwnedRecurringTask(subjectId, recurringTaskId, currentUser);
 
-        Subject newSubject = subjectRepository.findById(requestDTO.getSubjectId())
-                .orElseThrow(() -> new SubjectNotFoundException(requestDTO.getSubjectId()));
+        Subject newSubject = subjectRepository.findById(requestDTO.subjectId())
+                .orElseThrow(() -> new SubjectNotFoundException(requestDTO.subjectId()));
 
         if (!newSubject.getUser().getId().equals(currentUser.getId())) {
             throw new SubjectNotOwnedException();

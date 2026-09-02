@@ -152,7 +152,7 @@ public class SubjectService {
                 .id(subject.getId())
                 .name(subject.getName())
                 .description(subject.getDescription())
-                .archived(subject.archived())
+                .archived(subject.isArchived())
                 .deleted(subject.isDeleted())
                 .build();
     }
