@@ -125,11 +125,12 @@ public class SubjectControllerIntegrationTest {
         @DisplayName("With invalid data should return bad request")
         void createTask_WithInvalidData_ShouldReturnBadRequest() throws Exception {
             // GIVEN:
-            when(subjectService.createSubject(any(SubjectRequestDTO.class), any()))
-                    .thenReturn(subjectResponseDTO);
+            SubjectRequestDTO invalidRequestDTO = SubjectRequestDTO.builder()
+                    .name(null)
+                    .description("description")
+                    .build();
 
-            subjectRequestDTO.setName(null);
-            String jsonRequest = objectMapper.writeValueAsString(subjectRequestDTO);
+            String jsonRequest = objectMapper.writeValueAsString(invalidRequestDTO);
 
             // WHEN & THEN:
             mockMvc.perform(post("/subjects")

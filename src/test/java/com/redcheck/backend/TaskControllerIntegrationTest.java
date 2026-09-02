@@ -137,11 +137,13 @@ public class TaskControllerIntegrationTest {
         @DisplayName("With invalid data should return bad request")
         void createTask_WithInvalidData_ShouldReturnBadRequest() throws Exception {
             // GIVEN:
-            when(taskService.createTask(eq(10L), any(TaskRequestDTO.class), any()))
-                    .thenReturn(taskResponseDTO);
+            TaskRequestDTO invalidRequestDTO = TaskRequestDTO.builder()
+                    .title(null)
+                    .description("A new example task")
+                    .deadline(LocalDateTime.now().plusDays(3))
+                    .build();
 
-            taskRequestDTO.setTitle(null);
-            String jsonRequest = objectMapper.writeValueAsString(taskRequestDTO);
+            String jsonRequest = objectMapper.writeValueAsString(invalidRequestDTO);
 
             // WHEN & THEN:
             mockMvc.perform(post("/subjects/10/tasks")

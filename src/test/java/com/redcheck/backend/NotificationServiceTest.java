@@ -76,11 +76,11 @@ public class NotificationServiceTest {
             assertEquals(1, result.size());
 
             NotificationResponseDTO dto = result.get(0);
-            assertEquals(mockNotification.getId(), dto.getId());
-            assertEquals(mockNotification.getTitle(), dto.getTitle());
-            assertEquals(mockNotification.getMessage(), dto.getMessage());
-            assertFalse(dto.isRead());
-            assertEquals(mockNotification.getCreationDate(), dto.getCreationDate()); // Verifica el mapeo privado toResponseDTO
+            assertEquals(mockNotification.getId(), dto.id());
+            assertEquals(mockNotification.getTitle(), dto.title());
+            assertEquals(mockNotification.getMessage(), dto.message());
+            assertFalse(dto.read());
+            assertEquals(mockNotification.getCreationDate(), dto.creationDate()); // Verifica el mapeo privado toResponseDTO
             verify(notificationRepository, times(1)).findAllByUserAndRead(user, readFilter);
             verify(notificationRepository, never()).findAllByUser(any());
         }
@@ -100,8 +100,8 @@ public class NotificationServiceTest {
             assertEquals(1, result.size());
 
             NotificationResponseDTO dto = result.get(0);
-            assertEquals(mockNotification.getId(), dto.getId());
-            assertEquals(mockNotification.getTitle(), dto.getTitle());
+            assertEquals(mockNotification.getId(), dto.id());
+            assertEquals(mockNotification.getTitle(), dto.title());
             verify(notificationRepository, times(1)).findAllByUser(user);
             verify(notificationRepository, never()).findAllByUserAndRead(any(User.class), anyBoolean());
         }

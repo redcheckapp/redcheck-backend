@@ -9,7 +9,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -76,7 +76,7 @@ public class UserControllerIntegrationTest {
                     .andExpect(status().isOk())
                     .andExpect(MockMvcResultMatchers.content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
 
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.username").value(mockUser.getActualUsername()));
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.username").value(mockUser.getUsername()));
         }
     }
 

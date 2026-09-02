@@ -35,7 +35,6 @@ public class UserServiceTest {
     void setUp() {
         userEmail = "user@redcheck.com";
 
-        // Asumiendo que tu entidad User usa @Builder como en el SubjectServiceTest
         mockUser = User.builder()
                 .username("user")
                 .email(userEmail)
