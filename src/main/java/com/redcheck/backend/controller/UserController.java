@@ -14,13 +14,13 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/users")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "*")
+@CrossOrigin(origins = "${app.cors.allowed-origins}")
 public class UserController {
 
     private final UserService userService;
 
     @GetMapping("/profile")
-    public ResponseEntity<UserResponseDTO> getUsername(@AuthenticationPrincipal User currentUser){
+    public ResponseEntity<UserResponseDTO> getUsername(@AuthenticationPrincipal User currentUser) {
         UserResponseDTO responseDTO = UserResponseDTO.builder()
                 .username(currentUser.getActualUsername())
                 .email(currentUser.getEmail())
@@ -29,20 +29,20 @@ public class UserController {
     }
 
     @DeleteMapping("/me")
-    public ResponseEntity<?> deleteMyAccount(){
+    public ResponseEntity<?> deleteMyAccount() {
         // We obtain the authenticated user via security context
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         User currentUser = (User) authentication.getPrincipal();
 
-        // Comprobación para la cuenta de demo en español
-        if("demo-es@redcheck.com".equalsIgnoreCase(currentUser.getEmail())){
+        // Check for the Spanish demo account
+        if ("demo-es@redcheck.com".equalsIgnoreCase(currentUser.getEmail())) {
             return ResponseEntity
                     .status(HttpStatus.FORBIDDEN)
                     .body("{\"error\": \"Acción denegada. La cuenta de demostración no puede ser eliminada.\"}");
         }
 
-        // Comprobación para la cuenta de demo en inglés
-        if("demo-en@redcheck.com".equalsIgnoreCase(currentUser.getEmail())){
+        // Check for the English demo account
+        if ("demo-en@redcheck.com".equalsIgnoreCase(currentUser.getEmail())) {
             return ResponseEntity
                     .status(HttpStatus.FORBIDDEN)
                     .body("{\"error\": \"Action denied. The demo account cannot be deleted.\"}");
