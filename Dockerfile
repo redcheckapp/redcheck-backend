@@ -1,18 +1,25 @@
-# Build
+# Build stage
 FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
-# Copy pom and download dependencies
+
+# Cache dependencies
 COPY pom.xml .
 RUN mvn dependency:go-offline
-# Copy source code and compile skipping tests
-COPY src ./src
-RUN mvn clean package -DskipTests
 
-# Run
+# Build application
+COPY src ./src
+RUN mvn clean package -Dmaven.test.skip=true
+
+# Runtime stage
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
-# Copy generated .jar in Build
+
+# Security: Create and use non-root user
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring:spring
+
 COPY --from=build /app/target/*.jar app.jar
+
 EXPOSE 8080
-# Command to execute the app
+
 ENTRYPOINT ["java", "-jar", "app.jar"]
