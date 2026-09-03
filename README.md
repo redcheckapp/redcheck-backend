@@ -120,4 +120,4 @@ graph TD
 ```
 
 ## Copyright and License
-© 2026 RedCheck. Developed by Francisco Javier Molina Cuenca. All rights reserved.
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPLv3)**.
