@@ -9,7 +9,7 @@
 
 This repository contains the **Backend** architecture. You can find the React client and User Interface in [this link](https://github.com/redcheckapp/redcheck-frontend.git). 
 
-This project demonstrates scalable RESTful API design, rigorous security implementation, and seamless integration of artificial intelligence for background processing.
+This repository focuses on scalable RESTful API design, rigorous security implementation, and the seamless integration of artificial intelligence for background processing.
 
 <p align="center">
   <img src="https://github.com/user-attachments/assets/91100413-5db4-4849-9075-c7ba640219eb" alt="Swagger API Documentation" width="800"/>
@@ -46,20 +46,42 @@ The API was engineered with a focus on security, performance, and clear domain s
    cd redcheck-backend
    ```
 2. Database and Environment Configuration:
-  Update your `src/main/resources/application.properties` with your local credentials and API keys.
+  Update your `src/main/resources/application.yml` with your local credentials and API keys (Use environment variables!).
   ```Properties
-  # Database Configuration
-  spring.datasource.url=jdbc:mysql://localhost:3306/redcheck
-  spring.datasource.username=root
-  spring.datasource.password=your_db_password
-  spring.jpa.hibernate.ddl-auto=update
+  spring:
+    application:
+      name: RedCheck
 
-  # JWT Configuration
-  jwt.secret=your_highly_secure_base64_encoded_secret_key
-  jwt.expiration=86400000
+    datasource:
+      url: ${DB_URL}
+      username: ${DB_USERNAME}
+      password: ${DB_PASSWORD}
+      driver-class-name: com.mysql.cj.jdbc.Driver
 
-  # AI Configuration
-  ai.api.key=your_llm_api_key
+    jpa:
+      hibernate:
+        ddl-auto: ${DDL_AUTO:validate}
+      show-sql: ${SHOW_SQL:false}
+      properties:
+        hibernate:
+          format_sql: true
+          dialect: org.hibernate.dialect.MySQLDialect
+
+  app:
+    cors:
+      allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:8080}
+    jwt:
+      secret: ${JWT_SECRET}
+
+  ai:
+    engine:
+      url: ${AI_ENGINE_URL}
+
+  springdoc:
+    api-docs:
+      enabled: false
+    swagger-ui:
+      enabled: false
   ```
 3. Build and Run:
    ```Bash
@@ -68,7 +90,7 @@ The API was engineered with a focus on security, performance, and clear domain s
    ```
 4. The server will start on `http://localhost:8080`.
 
-## Architecture Highlights
+## How it works
 
 The codebase strictly adheres to the Controller-Service-Repository pattern, ensuring a clean separation of concerns:
 
