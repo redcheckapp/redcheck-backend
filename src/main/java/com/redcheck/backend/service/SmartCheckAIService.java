@@ -1,6 +1,7 @@
 package com.redcheck.backend.service;
 
 import com.redcheck.backend.dto.request.EngineRequestDTO;
+import com.redcheck.backend.dto.request.TaskOutcomeDTO;
 import com.redcheck.backend.entity.AiResponse;
 import com.redcheck.backend.entity.Notification;
 import com.redcheck.backend.entity.Task;
@@ -131,6 +132,24 @@ public class SmartCheckAIService {
                     .user(currentUser)
                     .build();
             notificationRepository.save(notificationError);
+        }
+    }
+
+    @Async
+    public void sendTaskOutcome(TaskOutcomeDTO outcome) {
+        try {
+            RestTemplate restTemplate = new RestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<TaskOutcomeDTO> entity = new HttpEntity<>(outcome, headers);
+
+            restTemplate.postForEntity(
+                    aiEngineUrl + "/api/v1/tasks/outcome",
+                    entity,
+                    String.class
+            );
+        } catch (Exception e) {
+            log.error("Error sending task outcome for task ID {}", outcome.id(), e);
         }
     }
 }

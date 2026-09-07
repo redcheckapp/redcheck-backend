@@ -1,6 +1,7 @@
 package com.redcheck.backend.service;
 
 import com.redcheck.backend.dto.update.TaskCompleteDTO;
+import com.redcheck.backend.dto.request.TaskOutcomeDTO;
 import com.redcheck.backend.dto.request.TaskRequestDTO;
 import com.redcheck.backend.dto.response.TaskResponseDTO;
 import com.redcheck.backend.entity.Subject;
@@ -28,6 +29,7 @@ public class TaskService {
 
     private final TaskRepository taskRepository;
     private final SubjectRepository subjectRepository;
+    private final SmartCheckAIService smartCheckAIService;
 
     public List<TaskResponseDTO> getAllTask(User currentUser, Long subjectId, Boolean completed, Boolean overdue, Boolean deleted) {
 
@@ -137,6 +139,9 @@ public class TaskService {
         }
 
         taskRepository.save(task);
+
+        smartCheckAIService.sendTaskOutcome(toOutcomeDTO(task, currentUser));
+
         return toResponseDTO(task);
     }
 
@@ -177,6 +182,18 @@ public class TaskService {
                 .deleted(task.isDeleted())
                 .overdue(isOverdue)
                 .subjectId(task.getSubject().getId())
+                .build();
+    }
+
+    private TaskOutcomeDTO toOutcomeDTO(Task task, User currentUser) {
+        return TaskOutcomeDTO.builder()
+                .userId(currentUser.getId().toString())
+                .id(task.getId())
+                .titulo(task.getTitle())
+                .asignatura(task.getSubject() != null ? task.getSubject().getName() : "")
+                .fechaLimite(task.getDeadline() != null ? task.getDeadline().toString() : null)
+                .completada(task.getCompletedDate() != null)
+                .fechaCompletado(task.getCompletedDate() != null ? task.getCompletedDate().toString() : null)
                 .build();
     }
 }

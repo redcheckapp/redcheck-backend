@@ -11,6 +11,7 @@ import com.redcheck.backend.exception.SubjectNotOwnedException;
 import com.redcheck.backend.exception.TaskNotOwnedException;
 import com.redcheck.backend.repository.SubjectRepository;
 import com.redcheck.backend.repository.TaskRepository;
+import com.redcheck.backend.service.SmartCheckAIService;
 import com.redcheck.backend.service.TaskService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -38,6 +39,9 @@ class TaskServiceTest {
 
     @Mock
     private SubjectRepository subjectRepository;
+
+    @Mock
+    private SmartCheckAIService smartCheckAIService;
 
     @InjectMocks
     private TaskService taskService;
