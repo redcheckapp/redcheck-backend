@@ -220,6 +220,41 @@ class TaskServiceTest {
             verify(subjectRepository, times(1)).findById(999L);
             verify(taskRepository, never()).save(any(Task.class));
         }
+
+        @Test
+        @DisplayName("When priority is not provided should default to MEDIUM")
+        void createTask_WhenPriorityNotProvided_ShouldDefaultToMedium() {
+            // GIVEN: mockRequestTaskDTO has no priority set
+            when(subjectRepository.findById(mockSubject.getId()))
+                    .thenReturn(Optional.of(mockSubject));
+
+            // WHEN
+            TaskResponseDTO result = taskService.createTask(mockSubject.getId(), mockRequestTaskDTO, user);
+
+            // THEN
+            assertEquals(Task.Priority.MEDIUM, result.priority());
+        }
+
+        @Test
+        @DisplayName("When priority is provided should use it")
+        void createTask_WhenPriorityProvided_ShouldUseProvidedPriority() {
+            // GIVEN
+            TaskRequestDTO requestWithPriority = TaskRequestDTO.builder()
+                    .title("new task title")
+                    .description("new task description")
+                    .deadline(LocalDateTime.now())
+                    .priority(Task.Priority.HIGH)
+                    .build();
+
+            when(subjectRepository.findById(mockSubject.getId()))
+                    .thenReturn(Optional.of(mockSubject));
+
+            // WHEN
+            TaskResponseDTO result = taskService.createTask(mockSubject.getId(), requestWithPriority, user);
+
+            // THEN
+            assertEquals(Task.Priority.HIGH, result.priority());
+        }
     }
 
     // ==========================================
@@ -275,6 +310,45 @@ class TaskServiceTest {
             verify(subjectRepository, times(1)).findById(mockSubject.getId());
             verify(taskRepository, times(1)).findById(mockTask.getId());
             verify(taskRepository, never()).save(any(Task.class));
+        }
+
+        @Test
+        @DisplayName("When priority is not provided should keep the task's existing priority")
+        void updateTask_WhenPriorityNotProvided_ShouldKeepExistingPriority() {
+            // GIVEN: mockTask starts at the default MEDIUM, mockRequestTaskDTO has no priority set
+            when(subjectRepository.findById(mockSubject.getId()))
+                    .thenReturn(Optional.of(mockSubject));
+            when(taskRepository.findById(mockTask.getId()))
+                    .thenReturn(Optional.of(mockTask));
+
+            // WHEN
+            TaskResponseDTO result = taskService.updateTask(mockSubject.getId(), mockTask.getId(), mockRequestTaskDTO, user);
+
+            // THEN
+            assertEquals(Task.Priority.MEDIUM, result.priority());
+        }
+
+        @Test
+        @DisplayName("When priority is provided should overwrite the task's priority")
+        void updateTask_WhenPriorityProvided_ShouldOverwritePriority() {
+            // GIVEN
+            TaskRequestDTO requestWithPriority = TaskRequestDTO.builder()
+                    .title("new task title")
+                    .description("new task description")
+                    .deadline(LocalDateTime.now())
+                    .priority(Task.Priority.LOW)
+                    .build();
+
+            when(subjectRepository.findById(mockSubject.getId()))
+                    .thenReturn(Optional.of(mockSubject));
+            when(taskRepository.findById(mockTask.getId()))
+                    .thenReturn(Optional.of(mockTask));
+
+            // WHEN
+            TaskResponseDTO result = taskService.updateTask(mockSubject.getId(), mockTask.getId(), requestWithPriority, user);
+
+            // THEN
+            assertEquals(Task.Priority.LOW, result.priority());
         }
     }
 

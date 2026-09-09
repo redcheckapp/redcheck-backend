@@ -1,5 +1,6 @@
 package com.redcheck.backend.dto.response;
 
+import com.redcheck.backend.entity.Task;
 import lombok.Builder;
 
 import java.time.LocalDateTime;
@@ -15,5 +16,6 @@ public record TaskResponseDTO(
         boolean deleted,
         boolean completed,
         boolean overdue,
-        Long subjectId
+        Long subjectId,
+        Task.Priority priority
 ) {}

@@ -1,5 +1,6 @@
 package com.redcheck.backend.dto.request;
 
+import com.redcheck.backend.entity.Task;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
@@ -15,5 +16,9 @@ public record TaskRequestDTO(
         @Size(max = 500, message = "Description must not exceed 500 characters")
         String description,
 
-        LocalDateTime deadline
+        LocalDateTime deadline,
+
+        // Optional: null means "keep current priority" on update, or
+        // "default to MEDIUM" on create (see TaskService).
+        Task.Priority priority
 ) {}

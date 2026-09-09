@@ -108,6 +108,7 @@ public class TaskService {
                 .title(requestDTO.title())
                 .description(requestDTO.description())
                 .deadline(requestDTO.deadline())
+                .priority(requestDTO.priority() != null ? requestDTO.priority() : Task.Priority.MEDIUM)
                 .subject(subject)
                 .build();
 
@@ -123,6 +124,9 @@ public class TaskService {
         task.setTitle(requestDTO.title());
         task.setDescription(requestDTO.description());
         task.setDeadline(requestDTO.deadline());
+        if (requestDTO.priority() != null) {
+            task.setPriority(requestDTO.priority());
+        }
 
         taskRepository.save(task);
         return toResponseDTO(task);
@@ -214,6 +218,7 @@ public class TaskService {
                 .deleted(task.isDeleted())
                 .overdue(isOverdue)
                 .subjectId(task.getSubject().getId())
+                .priority(task.getPriority())
                 .build();
     }
 

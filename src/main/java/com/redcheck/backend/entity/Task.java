@@ -13,6 +13,10 @@ import java.time.LocalDateTime;
 @Builder
 public class Task {
 
+    public enum Priority {
+        LOW, MEDIUM, HIGH
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -29,6 +33,15 @@ public class Task {
 
     @Column(name = "completed_date")
     private LocalDateTime completedDate;
+
+    // Applied via Hibernate's ddl-auto=update (this project's only schema
+    // migration mechanism, no Flyway/Liquibase — see backend CLAUDE.md).
+    // The DB-level DEFAULT backfills existing rows on that ALTER TABLE and
+    // covers any raw INSERT (e.g. init-demo.sql) that doesn't set it.
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20) DEFAULT 'MEDIUM'")
+    @Builder.Default
+    private Priority priority = Priority.MEDIUM;
 
     @Column(nullable = false)
     private boolean deleted = false;
