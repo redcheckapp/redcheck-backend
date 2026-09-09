@@ -24,5 +24,18 @@ public record RecurringTaskResponseDTO(
         // live-previewing an in-progress, not-yet-saved form — this field
         // is the authoritative one for an already-created routine.
         LocalDateTime nextOccurrence,
+        // Streak/completion stats — see RecurringTaskService#computeStats.
+        // currentStreak: consecutive completed occurrences counting back
+        // from the most recent one (0 the moment the latest occurrence is
+        // still pending, deliberately — no grace period for "not due yet",
+        // see that method's own comment). longestStreak: the best run ever.
+        // completionRate: totalCompleted / totalGenerated, 0 when nothing's
+        // been generated yet (not null — a routine with no history yet
+        // isn't "unknown", it's "0% so far").
+        int currentStreak,
+        int longestStreak,
+        double completionRate,
+        int totalGenerated,
+        int totalCompleted,
         Long subjectId
 ) {}

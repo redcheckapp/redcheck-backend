@@ -5,6 +5,7 @@ import com.redcheck.backend.dto.response.RecurringTaskResponseDTO;
 import com.redcheck.backend.dto.update.RecurringTaskActiveDTO;
 import com.redcheck.backend.entity.RecurringTask;
 import com.redcheck.backend.entity.Subject;
+import com.redcheck.backend.entity.Task;
 import com.redcheck.backend.entity.User;
 import com.redcheck.backend.exception.*;
 import com.redcheck.backend.repository.RecurringTaskRepository;
@@ -133,6 +134,7 @@ public class RecurringTaskService {
     }
 
     private RecurringTaskResponseDTO toResponseDTO(RecurringTask recurringTask) {
+        RoutineStats stats = computeStats(recurringTask);
         return RecurringTaskResponseDTO.builder()
                 .id(recurringTask.getId())
                 .title(recurringTask.getTitle())
@@ -144,8 +146,58 @@ public class RecurringTaskService {
                 .createdDate(recurringTask.getCreatedDate())
                 .latestGeneratedDate(recurringTask.getLatestGeneratedDate())
                 .nextOccurrence(computeNextOccurrence(recurringTask))
+                .currentStreak(stats.currentStreak())
+                .longestStreak(stats.longestStreak())
+                .completionRate(stats.completionRate())
+                .totalGenerated(stats.totalGenerated())
+                .totalCompleted(stats.totalCompleted())
                 .subjectId(recurringTask.getSubject().getId())
                 .build();
+    }
+
+    private record RoutineStats(int currentStreak, int longestStreak, double completionRate, int totalGenerated, int totalCompleted) {}
+
+    // Streaks/completion rate, derived from the routine's full occurrence
+    // history rather than tracked incrementally — a routine's history is
+    // always small (at most one Task per day since it began), so O(n) here
+    // is cheap and, unlike an incremental counter, can never drift out of
+    // sync with reality (e.g. after a past task is manually deleted or its
+    // completion is toggled off).
+    private RoutineStats computeStats(RecurringTask recurringTask) {
+        List<Task> history = taskRepository.findAllByRecurringTaskAndDeletedFalseOrderByAssignedDateAsc(recurringTask);
+
+        int totalGenerated = history.size();
+        int totalCompleted = 0;
+        int longestStreak = 0;
+        int runningStreak = 0;
+
+        for (Task task : history) {
+            if (task.getCompletedDate() != null) {
+                totalCompleted++;
+                runningStreak++;
+                longestStreak = Math.max(longestStreak, runningStreak);
+            } else {
+                runningStreak = 0;
+            }
+        }
+
+        // Consecutive completed occurrences counting back from the most
+        // recent one — deliberately 0 (not "N minus the still-pending one")
+        // the instant the latest occurrence isn't completed yet, rather
+        // than guessing whether it's "not due yet" vs. "missed". Simple and
+        // honest beats a heuristic grace period here.
+        int currentStreak = 0;
+        for (int i = history.size() - 1; i >= 0; i--) {
+            if (history.get(i).getCompletedDate() != null) {
+                currentStreak++;
+            } else {
+                break;
+            }
+        }
+
+        double completionRate = totalGenerated == 0 ? 0.0 : (double) totalCompleted / totalGenerated;
+
+        return new RoutineStats(currentStreak, longestStreak, completionRate, totalGenerated, totalCompleted);
     }
 
     // A read-only preview of when this routine will next produce a Task —

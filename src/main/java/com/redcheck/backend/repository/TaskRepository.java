@@ -37,6 +37,13 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     Optional<Task> findTopByRecurringTaskAndDeletedFalseOrderByAssignedDateDesc(RecurringTask recurringTask);
 
+    // Full chronological occurrence history for one routine — streaks and
+    // completion-rate stats (RecurringTaskService#computeStats) are derived
+    // from this in memory rather than via SQL aggregation, since a single
+    // routine's generated-task count is always small (at most one per day
+    // since it began).
+    List<Task> findAllByRecurringTaskAndDeletedFalseOrderByAssignedDateAsc(RecurringTask recurringTask);
+
     @Modifying
     @Query("UPDATE Task t SET t.recurringTask = null WHERE t.recurringTask = :recurringTask")
     void detachFromRecurringTask(@Param("recurringTask") RecurringTask recurringTask);

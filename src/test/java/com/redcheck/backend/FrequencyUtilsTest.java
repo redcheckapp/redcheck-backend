@@ -105,5 +105,41 @@ public class FrequencyUtilsTest {
             LocalDateTime from = LocalDateTime.of(2026, 1, 1, 0, 0);
             assertThrows(IllegalArgumentException.class, () -> FrequencyUtils.nextExecution("not a cron", from));
         }
+
+        @Test
+        @DisplayName("Monthly-on-day-15 should resolve to the 15th of next month, from the 1st")
+        void nextExecution_MonthlyDay15_ShouldResolveToThe15thOfSameMonth() {
+            LocalDateTime from = LocalDateTime.of(2026, 1, 1, 0, 0);
+            assertEquals(LocalDateTime.of(2026, 1, 15, 0, 0), FrequencyUtils.nextExecution("MONTHLY:15", from));
+        }
+
+        @Test
+        @DisplayName("Monthly-on-day-15 should roll over to next month once already past the 15th")
+        void nextExecution_MonthlyDay15_ShouldRollOverPastThe15th() {
+            LocalDateTime from = LocalDateTime.of(2026, 1, 20, 0, 0);
+            assertEquals(LocalDateTime.of(2026, 2, 15, 0, 0), FrequencyUtils.nextExecution("MONTHLY:15", from));
+        }
+
+        @Test
+        @DisplayName("Monthly-on-day-31 should clamp to February's actual last day instead of skipping it")
+        void nextExecution_MonthlyDay31_ShouldClampInShortMonth() {
+            LocalDateTime from = LocalDateTime.of(2026, 1, 31, 0, 0);
+            // 2026 is not a leap year — February has 28 days.
+            assertEquals(LocalDateTime.of(2026, 2, 28, 0, 0), FrequencyUtils.nextExecution("MONTHLY:31", from));
+        }
+
+        @Test
+        @DisplayName("Monthly-on-LAST should resolve to this month's last day when still ahead")
+        void nextExecution_MonthlyLast_ShouldResolveToThisMonthsLastDay() {
+            LocalDateTime from = LocalDateTime.of(2026, 2, 10, 0, 0);
+            assertEquals(LocalDateTime.of(2026, 2, 28, 0, 0), FrequencyUtils.nextExecution("MONTHLY:LAST", from));
+        }
+
+        @Test
+        @DisplayName("Monthly-on-LAST should roll over to next month's last day once already there")
+        void nextExecution_MonthlyLast_ShouldRollOverOnceAlreadyLastDay() {
+            LocalDateTime from = LocalDateTime.of(2026, 2, 28, 0, 0);
+            assertEquals(LocalDateTime.of(2026, 3, 31, 0, 0), FrequencyUtils.nextExecution("MONTHLY:LAST", from));
+        }
     }
 }

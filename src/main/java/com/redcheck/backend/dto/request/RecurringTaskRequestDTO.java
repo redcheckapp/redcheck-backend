@@ -19,17 +19,20 @@ public record RecurringTaskRequestDTO(
         @Size(max = 500, message = "Description must not exceed 500 characters")
         String description,
 
-        // Either one of the 4 simple presets, or a custom day-of-week cron
+        // Either one of the 4 simple presets, a custom day-of-week cron
         // string built by the frontend (see recurrenceUtils.ts):
         // "0 0 0 * * <days>", <days> a comma-separated list of 0-6 (Sunday=0,
-        // same as JS's Date#getDay()). Deliberately narrower than a generic
-        // cron-charset pattern — restricting it to exactly the shape the UI
-        // can build/display means every stored frequency can always be
-        // parsed back into day checkboxes for editing (see
-        // RecurringTasksModal.tsx's handleStartEdit).
+        // same as JS's Date#getDay()) — or a custom monthly-day frequency,
+        // "MONTHLY:<day>" where <day> is 1-31 or "LAST" (see
+        // FrequencyUtils#nextExecution for why that isn't plain cron).
+        // Deliberately narrower than a generic cron-charset pattern —
+        // restricting it to exactly the shapes the UI can build/display
+        // means every stored frequency can always be parsed back into the
+        // right editor (day checkboxes or a day-of-month picker) for
+        // editing (see RecurringTasksModal.tsx's handleStartEdit).
         @NotBlank(message = "Frequency is required")
         @Pattern(
-                regexp = "DAILY|WEEKLY|BIWEEKLY|MONTHLY|0 0 0 \\* \\* [0-6](,[0-6]){0,6}",
+                regexp = "DAILY|WEEKLY|BIWEEKLY|MONTHLY|0 0 0 \\* \\* [0-6](,[0-6]){0,6}|MONTHLY:(LAST|[1-9]|[12][0-9]|3[01])",
                 message = "Invalid frequency format"
         )
         String frequency,

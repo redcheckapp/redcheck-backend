@@ -5,6 +5,7 @@ import com.redcheck.backend.dto.response.RecurringTaskResponseDTO;
 import com.redcheck.backend.dto.update.RecurringTaskActiveDTO;
 import com.redcheck.backend.entity.RecurringTask;
 import com.redcheck.backend.entity.Subject;
+import com.redcheck.backend.entity.Task;
 import com.redcheck.backend.entity.User;
 import com.redcheck.backend.exception.RecurringTaskNotOwnedException;
 import com.redcheck.backend.exception.SubjectNotOwnedException;
@@ -323,6 +324,93 @@ public class RecurringTaskServiceTest {
 
             // THEN
             assertNull(result.nextOccurrence());
+        }
+    }
+
+    @Nested
+    @DisplayName("Stats: currentStreak / longestStreak / completionRate (computed in toResponseDTO)")
+    class StatsTests {
+
+        private Task completed(int daysAgo) {
+            return Task.builder()
+                    .completedDate(LocalDateTime.now().minusDays(daysAgo))
+                    .assignedDate(LocalDateTime.now().minusDays(daysAgo))
+                    .build();
+        }
+
+        private Task pending(int daysAgo) {
+            return Task.builder()
+                    .completedDate(null)
+                    .assignedDate(LocalDateTime.now().minusDays(daysAgo))
+                    .build();
+        }
+
+        @Test
+        @DisplayName("When no history exists, all stats should be zero")
+        void stats_WhenNoHistory_ShouldBeAllZero() {
+            when(recurringTaskRepository.findAllBySubject_User_Id(currentUser.getId()))
+                    .thenReturn(Collections.singletonList(mockRecurringTask));
+            when(taskRepository.findAllByRecurringTaskAndDeletedFalseOrderByAssignedDateAsc(mockRecurringTask))
+                    .thenReturn(Collections.emptyList());
+
+            RecurringTaskResponseDTO result = recurringTaskService.getAllRecurringTask(currentUser, null, null).get(0);
+
+            assertEquals(0, result.currentStreak());
+            assertEquals(0, result.longestStreak());
+            assertEquals(0.0, result.completionRate());
+            assertEquals(0, result.totalGenerated());
+            assertEquals(0, result.totalCompleted());
+        }
+
+        @Test
+        @DisplayName("Current streak counts consecutive completed occurrences from the most recent backwards")
+        void stats_WhenRecentRunCompleted_ShouldCountCurrentStreak() {
+            // chronological order oldest -> newest: missed, completed, completed, completed
+            List<Task> history = List.of(pending(3), completed(2), completed(1), completed(0));
+            when(recurringTaskRepository.findAllBySubject_User_Id(currentUser.getId()))
+                    .thenReturn(Collections.singletonList(mockRecurringTask));
+            when(taskRepository.findAllByRecurringTaskAndDeletedFalseOrderByAssignedDateAsc(mockRecurringTask))
+                    .thenReturn(history);
+
+            RecurringTaskResponseDTO result = recurringTaskService.getAllRecurringTask(currentUser, null, null).get(0);
+
+            assertEquals(3, result.currentStreak());
+            assertEquals(3, result.longestStreak());
+            assertEquals(3, result.totalCompleted());
+            assertEquals(4, result.totalGenerated());
+            assertEquals(0.75, result.completionRate(), 0.0001);
+        }
+
+        @Test
+        @DisplayName("Current streak is 0 the moment the latest occurrence isn't completed, even with a long earlier run")
+        void stats_WhenLatestIsPending_ShouldResetCurrentStreakButKeepLongest() {
+            // oldest -> newest: completed, completed, completed, pending (today, not yet done)
+            List<Task> history = List.of(completed(3), completed(2), completed(1), pending(0));
+            when(recurringTaskRepository.findAllBySubject_User_Id(currentUser.getId()))
+                    .thenReturn(Collections.singletonList(mockRecurringTask));
+            when(taskRepository.findAllByRecurringTaskAndDeletedFalseOrderByAssignedDateAsc(mockRecurringTask))
+                    .thenReturn(history);
+
+            RecurringTaskResponseDTO result = recurringTaskService.getAllRecurringTask(currentUser, null, null).get(0);
+
+            assertEquals(0, result.currentStreak());
+            assertEquals(3, result.longestStreak());
+        }
+
+        @Test
+        @DisplayName("Longest streak finds the best run anywhere in history, not just the tail")
+        void stats_WhenEarlierRunIsLongest_ShouldFindIt() {
+            // oldest -> newest: completed x4, missed, completed x1
+            List<Task> history = List.of(completed(6), completed(5), completed(4), completed(3), pending(2), completed(1));
+            when(recurringTaskRepository.findAllBySubject_User_Id(currentUser.getId()))
+                    .thenReturn(Collections.singletonList(mockRecurringTask));
+            when(taskRepository.findAllByRecurringTaskAndDeletedFalseOrderByAssignedDateAsc(mockRecurringTask))
+                    .thenReturn(history);
+
+            RecurringTaskResponseDTO result = recurringTaskService.getAllRecurringTask(currentUser, null, null).get(0);
+
+            assertEquals(4, result.longestStreak());
+            assertEquals(1, result.currentStreak());
         }
     }
 
