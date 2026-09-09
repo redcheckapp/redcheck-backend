@@ -78,6 +78,22 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
 
+    // Calendar history: every task (pending or completed) across all of the
+    // user's subjects whose deadline falls within [from, to] (inclusive),
+    // in one query — used by AgendaView to show past-day/completed tasks
+    // instead of relying on the dashboard's pending/completed-today-only data.
+    public List<TaskResponseDTO> getTasksForDateRange(User currentUser, LocalDate from, LocalDate to) {
+        LocalDateTime startOfDay = from.atStartOfDay();
+        LocalDateTime endOfDay = to.atTime(LocalTime.MAX);
+
+        List<Task> rawTasks = taskRepository.findAllBySubject_User_IdAndDeadlineBetweenAndDeletedFalse(
+                currentUser.getId(), startOfDay, endOfDay);
+
+        return rawTasks.stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public TaskResponseDTO createTask(Long subjectId, TaskRequestDTO requestDTO, User currentUser) {
 

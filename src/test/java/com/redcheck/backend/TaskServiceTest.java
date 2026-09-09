@@ -142,6 +142,31 @@ class TaskServiceTest {
     }
 
     @Nested
+    @DisplayName("Method: getTasksForDateRange")
+    class GetTasksForDateRangeTests {
+
+        @Test
+        @DisplayName("Should return every task (pending or completed) within the range in one query")
+        void getTasksForDateRange_ShouldReturnTasksWithinRangeInOneQuery() {
+            // GIVEN
+            java.time.LocalDate from = java.time.LocalDate.of(2026, 1, 1);
+            java.time.LocalDate to = java.time.LocalDate.of(2026, 1, 7);
+
+            when(taskRepository.findAllBySubject_User_IdAndDeadlineBetweenAndDeletedFalse(eq(user.getId()), any(), any()))
+                    .thenReturn(Collections.singletonList(mockTask));
+
+            // WHEN
+            List<TaskResponseDTO> result = taskService.getTasksForDateRange(user, from, to);
+
+            // THEN
+            assertFalse(result.isEmpty());
+            assertEquals(1, result.size());
+            assertEquals(mockTask.getId(), result.get(0).id());
+            verify(taskRepository, times(1)).findAllBySubject_User_IdAndDeadlineBetweenAndDeletedFalse(eq(user.getId()), any(), any());
+        }
+    }
+
+    @Nested
     @DisplayName("Method: createTask")
     class CreateTaskTest {
 

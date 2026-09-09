@@ -21,6 +21,13 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
 
     List<Task> findAllBySubject_User_IdAndDeadlineBeforeAndCompletedDateIsNullAndDeletedFalse(Long userId, LocalDateTime now);
 
+    // Calendar history: every task (pending or completed) across all of the
+    // user's subjects whose deadline falls in [startOfDay, endOfDay] — used
+    // for a single date or a whole visible calendar range (see
+    // TaskService#getTasksForDateRange), unlike findPendingOrCompletedTodayAndDeletedFalse
+    // which only ever covers today's pending/completed tasks.
+    List<Task> findAllBySubject_User_IdAndDeadlineBetweenAndDeletedFalse(Long userId, LocalDateTime startOfDay, LocalDateTime endOfDay);
+
     @Query("SELECT t FROM Task t WHERE t.subject.user.id = :userId AND t.deleted = false AND (t.completedDate IS NULL OR (t.completedDate >= :startOfDay AND t.completedDate <= :endOfDay))")
     List<Task> findPendingOrCompletedTodayAndDeletedFalse(
             @Param("userId") Long userId,
