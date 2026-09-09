@@ -56,7 +56,7 @@ public class AuthControllerIntegrationTest {
                 .build();
 
         loginRequestDTO = LoginRequestDTO.builder()
-                .email("newuser@redcheck.com")
+                .emailOrUsername("newuser@redcheck.com")
                 .password("password123")
                 .build();
 

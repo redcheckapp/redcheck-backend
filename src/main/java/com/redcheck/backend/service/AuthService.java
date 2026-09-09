@@ -8,6 +8,7 @@ import com.redcheck.backend.repository.UserRepository;
 import com.redcheck.backend.security.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -22,9 +23,12 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
 
     public AuthResponseDTO register(RegisterRequestDTO requestDTO) {
-        // Check if the email already exists (error handling to be improved in future versions)
+        // Check if the email or username already exists (error handling to be improved in future versions)
         if (userRepository.existsByEmail(requestDTO.email())) {
             throw new RuntimeException("Email already registered");
+        }
+        if (userRepository.existsByUsername(requestDTO.username())) {
+            throw new RuntimeException("Username already registered");
         }
 
         // Create user with the encrypted password
@@ -45,17 +49,25 @@ public class AuthService {
     }
 
     public AuthResponseDTO login(LoginRequestDTO requestDTO) {
-        // Authenticate user (throws exception if credentials are invalid)
+        // Resolve the identifier (either email or username, both unique) to
+        // the actual user first — UserDetails/Spring Security's own
+        // authentication flow in this app is keyed on email (see
+        // User#getUsername), so authenticate() below always needs the real
+        // email regardless of which identifier the caller typed. Thrown as
+        // the same BadCredentialsException a wrong password would produce,
+        // so "no such user" and "wrong password" aren't distinguishable
+        // from the response — same as before this change, just now with an
+        // extra case that can hit it.
+        User user = userRepository.findByEmailOrUsername(requestDTO.emailOrUsername())
+                .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
+
+        // Authenticate user (throws exception if the password is invalid)
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        requestDTO.email(),
+                        user.getEmail(),
                         requestDTO.password()
                 )
         );
-
-        // Retrieve the authenticated user
-        User user = userRepository.findByEmail(requestDTO.email())
-                .orElseThrow();
 
         String jwtToken = jwtService.generateToken(user);
 

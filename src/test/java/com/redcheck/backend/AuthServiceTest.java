@@ -16,10 +16,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -66,7 +66,7 @@ public class AuthServiceTest {
                 .build();
 
         mockLoginRequest = LoginRequestDTO.builder()
-                .email("test@redcheck.com")
+                .emailOrUsername("test@redcheck.com")
                 .password("rawPassword123")
                 .build();
     }
@@ -80,6 +80,8 @@ public class AuthServiceTest {
         void register_WhenDataIsValid_ShouldRegisterUserAndReturnToken() {
             // GIVEN
             when(userRepository.existsByEmail(mockRegisterRequest.email()))
+                    .thenReturn(false);
+            when(userRepository.existsByUsername(mockRegisterRequest.username()))
                     .thenReturn(false);
 
             when(jwtService.generateToken(mockUser))
@@ -112,6 +114,26 @@ public class AuthServiceTest {
             verify(userRepository, times(1)).existsByEmail(mockRegisterRequest.email());
             verify(jwtService, never()).generateToken(mockUser);
             verify(userRepository, never()).save(any(User.class));        }
+
+        @Test
+        @DisplayName("When username already exists should throw exception")
+        void register_WhenUsernameExists_ShouldThrowException() {
+            // GIVEN
+            when(userRepository.existsByEmail(mockRegisterRequest.email()))
+                    .thenReturn(false);
+            when(userRepository.existsByUsername(mockRegisterRequest.username()))
+                    .thenReturn(true);
+
+            // WHEN
+            assertThrows(RuntimeException.class, () -> {
+                authService.register(mockRegisterRequest);
+            });
+
+            // THEN
+            verify(userRepository, times(1)).existsByUsername(mockRegisterRequest.username());
+            verify(jwtService, never()).generateToken(mockUser);
+            verify(userRepository, never()).save(any(User.class));
+        }
     }
 
     @Nested
@@ -122,7 +144,7 @@ public class AuthServiceTest {
         @DisplayName("When credentials are valid should authenticate and return token")
         void login_WhenCredentialsAreValid_ShouldAuthenticateAndReturnToken() {
             // GIVEN
-            when(userRepository.findByEmail(any()))
+            when(userRepository.findByEmailOrUsername(mockLoginRequest.emailOrUsername()))
                     .thenReturn(Optional.of(mockUser));
 
             when(jwtService.generateToken(eq(mockUser)))
@@ -134,26 +156,53 @@ public class AuthServiceTest {
             // THEN
             assertNotNull(result);
             assertEquals(MOCK_TOKEN, result.token());
+            verify(userRepository, times(1)).findByEmailOrUsername(mockLoginRequest.emailOrUsername());
             verify(authenticationManager, times(1)).authenticate(any(UsernamePasswordAuthenticationToken.class));
-            verify(userRepository, times(1)).findByEmail(mockRegisterRequest.email());
             verify(jwtService, times(1)).generateToken(mockUser);
         }
 
         @Test
-        @DisplayName("When user does not exist should throw exception")
-        void login_WhenUserDoesNotExist_ShouldThrowException() {
+        @DisplayName("When logging in with a username instead of an email should still authenticate")
+        void login_WithUsername_ShouldAuthenticateAndReturnToken() {
             // GIVEN
-            when(userRepository.findByEmail(any()))
+            LoginRequestDTO usernameLoginRequest = LoginRequestDTO.builder()
+                    .emailOrUsername(mockUser.getActualUsername())
+                    .password("rawPassword123")
+                    .build();
+
+            when(userRepository.findByEmailOrUsername(mockUser.getActualUsername()))
+                    .thenReturn(Optional.of(mockUser));
+            when(jwtService.generateToken(eq(mockUser)))
+                    .thenReturn(MOCK_TOKEN);
+
+            // WHEN
+            AuthResponseDTO result = authService.login(usernameLoginRequest);
+
+            // THEN
+            assertNotNull(result);
+            assertEquals(MOCK_TOKEN, result.token());
+            // Authentication always proceeds with the resolved email, even
+            // though a username was supplied — see AuthService#login.
+            verify(authenticationManager, times(1)).authenticate(
+                    argThat(token -> mockUser.getEmail().equals(token.getPrincipal()))
+            );
+        }
+
+        @Test
+        @DisplayName("When no user matches the identifier should throw exception without authenticating")
+        void login_WhenUserDoesNotExist_ShouldThrowExceptionWithoutAuthenticating() {
+            // GIVEN
+            when(userRepository.findByEmailOrUsername(any()))
                     .thenReturn(Optional.empty());
 
             // WHEN
-            assertThrows(NoSuchElementException.class, () -> {
+            assertThrows(BadCredentialsException.class, () -> {
                 authService.login(mockLoginRequest);
             });
 
             // THEN
-            verify(authenticationManager, times(1)).authenticate(any(UsernamePasswordAuthenticationToken.class));
-            verify(userRepository, times(1)).findByEmail(any());
+            verify(userRepository, times(1)).findByEmailOrUsername(any());
+            verify(authenticationManager, never()).authenticate(any());
             verify(jwtService, never()).generateToken(any());
         }
     }
