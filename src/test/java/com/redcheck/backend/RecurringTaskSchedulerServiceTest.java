@@ -14,10 +14,15 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 
+import org.mockito.ArgumentCaptor;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Collections;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -171,6 +176,84 @@ public class RecurringTaskSchedulerServiceTest {
             verify(taskRepository, times(1)).save(any(Task.class));
             verify(recurringTaskRepository, never()).save(mockRecurringTask);
             verify(recurringTaskRepository, times(1)).save(secondRecurringTask);
+        }
+
+        @Test
+        @DisplayName("When a time-of-day is configured, the generated task's deadline should use it")
+        void generateTask_WhenTimeIsConfigured_ShouldSetDeadline() {
+            // GIVEN
+            mockRecurringTask.setLatestGeneratedDate(null);
+            mockRecurringTask.setTime(LocalTime.of(18, 0));
+
+            when(recurringTaskRepository.findAllByActiveTrue())
+                    .thenReturn(Collections.singletonList(mockRecurringTask));
+
+            ArgumentCaptor<Task> taskCaptor = ArgumentCaptor.forClass(Task.class);
+
+            // WHEN
+            recurringTaskSchedulerService.generateTask();
+
+            // THEN
+            verify(taskRepository).save(taskCaptor.capture());
+            assertEquals(LocalDate.now().atTime(18, 0), taskCaptor.getValue().getDeadline());
+        }
+
+        @Test
+        @DisplayName("When no time-of-day is configured, the generated task's deadline should stay null")
+        void generateTask_WhenNoTimeConfigured_ShouldLeaveDeadlineNull() {
+            // GIVEN
+            mockRecurringTask.setLatestGeneratedDate(null);
+
+            when(recurringTaskRepository.findAllByActiveTrue())
+                    .thenReturn(Collections.singletonList(mockRecurringTask));
+
+            ArgumentCaptor<Task> taskCaptor = ArgumentCaptor.forClass(Task.class);
+
+            // WHEN
+            recurringTaskSchedulerService.generateTask();
+
+            // THEN
+            verify(taskRepository).save(taskCaptor.capture());
+            assertNull(taskCaptor.getValue().getDeadline());
+        }
+
+        @Test
+        @DisplayName("When today is on or after endDate, should generate the final occurrence and deactivate")
+        void generateTask_WhenTodayReachesEndDate_ShouldGenerateAndDeactivate() {
+            // GIVEN
+            mockRecurringTask.setLatestGeneratedDate(null);
+            mockRecurringTask.setEndDate(LocalDate.now());
+
+            when(recurringTaskRepository.findAllByActiveTrue())
+                    .thenReturn(Collections.singletonList(mockRecurringTask));
+
+            // WHEN
+            recurringTaskSchedulerService.generateTask();
+
+            // THEN
+            verify(taskRepository, times(1)).save(any(Task.class));
+            assertFalse(mockRecurringTask.isActive());
+            verify(recurringTaskRepository, times(1)).save(mockRecurringTask);
+        }
+
+        @Test
+        @DisplayName("When endDate has already passed, should deactivate without generating")
+        void generateTask_WhenEndDateAlreadyPassed_ShouldDeactivateWithoutGenerating() {
+            // GIVEN: a run must have been missed, since an active routine
+            // shouldn't normally still be active past its own endDate.
+            mockRecurringTask.setLatestGeneratedDate(null);
+            mockRecurringTask.setEndDate(LocalDate.now().minusDays(1));
+
+            when(recurringTaskRepository.findAllByActiveTrue())
+                    .thenReturn(Collections.singletonList(mockRecurringTask));
+
+            // WHEN
+            recurringTaskSchedulerService.generateTask();
+
+            // THEN
+            verify(taskRepository, never()).save(any(Task.class));
+            assertFalse(mockRecurringTask.isActive());
+            verify(recurringTaskRepository, times(1)).save(mockRecurringTask);
         }
     }
 }

@@ -1,10 +1,14 @@
 package com.redcheck.backend.dto.request;
 
+import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Builder
 public record RecurringTaskRequestDTO(
@@ -29,6 +33,15 @@ public record RecurringTaskRequestDTO(
                 message = "Invalid frequency format"
         )
         String frequency,
+
+        // Optional: applied to every generated Task's deadline. Null keeps
+        // the old no-deadline behavior.
+        LocalTime time,
+
+        // Optional: the routine auto-deactivates once this date has passed
+        // (see RecurringTaskSchedulerService). Null means it never expires.
+        @FutureOrPresent(message = "End date must not be in the past")
+        LocalDate endDate,
 
         @NotNull(message = "Subject is required")
         Long subjectId

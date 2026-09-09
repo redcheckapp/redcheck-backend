@@ -21,7 +21,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -232,6 +234,95 @@ public class RecurringTaskServiceTest {
             // THEN
             verify(taskRepository, times(1)).detachFromRecurringTask(mockRecurringTask);
             verify(recurringTaskRepository, times(1)).delete(mockRecurringTask);
+        }
+    }
+
+    @Nested
+    @DisplayName("nextOccurrence (computed in toResponseDTO)")
+    class NextOccurrenceTests {
+
+        @Test
+        @DisplayName("When never generated should preview tomorrow's midnight tick")
+        void nextOccurrence_WhenNeverGenerated_ShouldPreviewTomorrow() {
+            // GIVEN: the scheduler generates the very first occurrence on its
+            // next daily tick regardless of frequency (latestGeneratedDate
+            // stays null on mockRecurringTask, matching @BeforeEach).
+            when(recurringTaskRepository.findAllBySubject_User_Id(currentUser.getId()))
+                    .thenReturn(Collections.singletonList(mockRecurringTask));
+
+            // WHEN
+            RecurringTaskResponseDTO result = recurringTaskService.getAllRecurringTask(currentUser, null, null).get(0);
+
+            // THEN
+            assertEquals(LocalDate.now().plusDays(1).atStartOfDay(), result.nextOccurrence());
+        }
+
+        @Test
+        @DisplayName("When a time-of-day is set should apply it instead of midnight")
+        void nextOccurrence_WhenTimeIsSet_ShouldApplyIt() {
+            // GIVEN
+            mockRecurringTask.setTime(LocalTime.of(9, 30));
+
+            when(recurringTaskRepository.findAllBySubject_User_Id(currentUser.getId()))
+                    .thenReturn(Collections.singletonList(mockRecurringTask));
+
+            // WHEN
+            RecurringTaskResponseDTO result = recurringTaskService.getAllRecurringTask(currentUser, null, null).get(0);
+
+            // THEN
+            assertEquals(LocalDate.now().plusDays(1).atTime(9, 30), result.nextOccurrence());
+        }
+
+        @Test
+        @DisplayName("When already generated before should project from the frequency, not tomorrow")
+        void nextOccurrence_WhenAlreadyGenerated_ShouldProjectFromFrequency() {
+            // GIVEN: WEEKLY, last generated 10 days ago — next should be 7
+            // days after that, i.e. 3 days in the past relative to today,
+            // not "tomorrow" (that fallback only applies pre-first-generation).
+            LocalDateTime lastGenerated = LocalDateTime.now().minusDays(10);
+            mockRecurringTask.setLatestGeneratedDate(lastGenerated);
+
+            when(recurringTaskRepository.findAllBySubject_User_Id(currentUser.getId()))
+                    .thenReturn(Collections.singletonList(mockRecurringTask));
+
+            // WHEN
+            RecurringTaskResponseDTO result = recurringTaskService.getAllRecurringTask(currentUser, null, null).get(0);
+
+            // THEN
+            assertEquals(lastGenerated.plusWeeks(1).toLocalDate().atStartOfDay(), result.nextOccurrence());
+        }
+
+        @Test
+        @DisplayName("When the computed next date is past endDate should return null")
+        void nextOccurrence_WhenPastEndDate_ShouldReturnNull() {
+            // GIVEN: never generated (previews as tomorrow), but the routine
+            // already ended yesterday.
+            mockRecurringTask.setEndDate(LocalDate.now().minusDays(1));
+
+            when(recurringTaskRepository.findAllBySubject_User_Id(currentUser.getId()))
+                    .thenReturn(Collections.singletonList(mockRecurringTask));
+
+            // WHEN
+            RecurringTaskResponseDTO result = recurringTaskService.getAllRecurringTask(currentUser, null, null).get(0);
+
+            // THEN
+            assertNull(result.nextOccurrence());
+        }
+
+        @Test
+        @DisplayName("When inactive should return null regardless of frequency/dates")
+        void nextOccurrence_WhenInactive_ShouldReturnNull() {
+            // GIVEN
+            mockRecurringTask.setActive(false);
+
+            when(recurringTaskRepository.findAllBySubject_User_Id(currentUser.getId()))
+                    .thenReturn(Collections.singletonList(mockRecurringTask));
+
+            // WHEN
+            RecurringTaskResponseDTO result = recurringTaskService.getAllRecurringTask(currentUser, null, null).get(0);
+
+            // THEN
+            assertNull(result.nextOccurrence());
         }
     }
 

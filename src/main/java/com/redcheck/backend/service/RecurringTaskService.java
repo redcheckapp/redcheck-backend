@@ -10,10 +10,13 @@ import com.redcheck.backend.exception.*;
 import com.redcheck.backend.repository.RecurringTaskRepository;
 import com.redcheck.backend.repository.SubjectRepository;
 import com.redcheck.backend.repository.TaskRepository;
+import com.redcheck.backend.util.FrequencyUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -56,6 +59,8 @@ public class RecurringTaskService {
                 .title(requestDTO.title())
                 .description(requestDTO.description())
                 .frequency(requestDTO.frequency())
+                .time(requestDTO.time())
+                .endDate(requestDTO.endDate())
                 .active(true)
                 .subject(subject)
                 .build();
@@ -79,6 +84,8 @@ public class RecurringTaskService {
         recurringTask.setTitle(requestDTO.title());
         recurringTask.setDescription(requestDTO.description());
         recurringTask.setFrequency(requestDTO.frequency());
+        recurringTask.setTime(requestDTO.time());
+        recurringTask.setEndDate(requestDTO.endDate());
         recurringTask.setSubject(newSubject);
 
         recurringTaskRepository.save(recurringTask);
@@ -131,10 +138,38 @@ public class RecurringTaskService {
                 .title(recurringTask.getTitle())
                 .description(recurringTask.getDescription())
                 .frequency(recurringTask.getFrequency())
+                .time(recurringTask.getTime())
+                .endDate(recurringTask.getEndDate())
                 .active(recurringTask.isActive())
                 .createdDate(recurringTask.getCreatedDate())
                 .latestGeneratedDate(recurringTask.getLatestGeneratedDate())
+                .nextOccurrence(computeNextOccurrence(recurringTask))
                 .subjectId(recurringTask.getSubject().getId())
                 .build();
+    }
+
+    // A read-only preview of when this routine will next produce a Task —
+    // never mutates latestGeneratedDate itself, that only happens inside
+    // RecurringTaskSchedulerService's actual generation run.
+    private LocalDateTime computeNextOccurrence(RecurringTask recurringTask) {
+        if (!recurringTask.isActive()) {
+            return null;
+        }
+
+        LocalDate nextDate;
+        if (recurringTask.getLatestGeneratedDate() == null) {
+            // Never generated yet — the scheduler creates the first
+            // occurrence on its very next daily tick regardless of
+            // frequency (see RecurringTaskSchedulerService#shouldGenerate).
+            nextDate = LocalDate.now().plusDays(1);
+        } else {
+            nextDate = FrequencyUtils.nextExecution(recurringTask.getFrequency(), recurringTask.getLatestGeneratedDate()).toLocalDate();
+        }
+
+        if (recurringTask.getEndDate() != null && nextDate.isAfter(recurringTask.getEndDate())) {
+            return null;
+        }
+
+        return recurringTask.getTime() != null ? nextDate.atTime(recurringTask.getTime()) : nextDate.atStartOfDay();
     }
 }
