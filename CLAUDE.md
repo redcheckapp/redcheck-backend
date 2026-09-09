@@ -52,6 +52,10 @@ Soft-delete ("Trash") is a real field (`deletedFalse`/`deleted` filters appear t
 
 Stateless JWT (`io.jsonwebtoken`), configured in `security/`: `JwtService` (issue/parse/validate tokens), `JwtAuthenticationFilter` (a `OncePerRequestFilter` that reads the `Authorization: Bearer` header, skips `/auth/**`, and populates `SecurityContextHolder`), `SecurityConfig` (stateless session policy, permits `/auth/**` and Swagger paths, requires auth on everything else — including `/users/**` explicitly). `@AuthenticationPrincipal User currentUser` is the standard way controllers get the caller's identity. CORS origins come from `app.cors.allowed-origins` and are also referenced per-controller via `@CrossOrigin(origins = "${app.cors.allowed-origins}")`.
 
+### User feedback
+
+`Feedback` (`category`: `BUG`/`SUGGESTION`/`PRAISE`/`OTHER`, `message`, `user`, `createdDate`) is write-only from the API's perspective — `POST /feedback` is the only endpoint, there's no admin UI or list endpoint in this app, so reading submissions means querying the DB directly. It's the one User-linked entity deliberately **not** cascaded from `User`'s `orphanRemoval` collections: deleting a user must never fail because they once submitted feedback, and the product team wants to keep that data even after the account is gone. Instead `Feedback.user` uses `@OnDelete(action = OnDeleteAction.SET_NULL)` (nullable FK, DB-level `ON DELETE SET NULL`) — if this pattern needs reuse elsewhere for the same reason (keep the row, drop the link), copy it rather than adding another cascaded collection to `User`.
+
 ### Recurring tasks & schedulers
 
 `RecurringTask` supports simple periodicities (`DAILY`, `WEEKLY`, `BIWEEKLY`, `MONTHLY`, validated/advanced via `util/FrequencyUtils`) as well as non-simple ones handled elsewhere in `RecurringTaskService`. `RecurringTaskSchedulerService` generates the next `Task` occurrences; `ProgressRecordSchedulerService` computes recurring progress snapshots. Both run via Spring's `@Scheduled` (`@EnableScheduling` is on in `RedCheckApiApplication`).
