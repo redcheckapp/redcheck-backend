@@ -30,17 +30,25 @@ public class RecurringTaskSchedulerService {
         List<RecurringTask> activeTasks = recurringTaskRepository.findAllByActiveTrue();
 
         for (RecurringTask recurringTask : activeTasks) {
-            if (shouldGenerate(recurringTask)) {
-                Task task = Task.builder()
-                        .title(recurringTask.getTitle())
-                        .description(recurringTask.getDescription())
-                        .subject(recurringTask.getSubject())
-                        .recurringTask(recurringTask)
-                        .build();
+            // One malformed/unparseable frequency must not abort generation
+            // for every other recurring task in this run — isolate each
+            // iteration so the rest of the batch still completes.
+            try {
+                if (shouldGenerate(recurringTask)) {
+                    Task task = Task.builder()
+                            .title(recurringTask.getTitle())
+                            .description(recurringTask.getDescription())
+                            .subject(recurringTask.getSubject())
+                            .recurringTask(recurringTask)
+                            .build();
 
-                taskRepository.save(task);
-                recurringTask.setLatestGeneratedDate(LocalDateTime.now());
-                recurringTaskRepository.save(recurringTask);
+                    taskRepository.save(task);
+                    recurringTask.setLatestGeneratedDate(LocalDateTime.now());
+                    recurringTaskRepository.save(recurringTask);
+                }
+            } catch (Exception e) {
+                log.error("Failed to process recurring task {} (frequency='{}'): {}",
+                        recurringTask.getId(), recurringTask.getFrequency(), e.getMessage(), e);
             }
         }
         log.info("Recurring tasks generation completed.");

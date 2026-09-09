@@ -142,5 +142,35 @@ public class RecurringTaskSchedulerServiceTest {
             verify(taskRepository, never()).save(any());
             verify(recurringTaskRepository, never()).save(any());
         }
+
+        @Test
+        @DisplayName("When one recurring task has an unparseable frequency, the rest of the batch should still be processed")
+        void generateTask_WhenOneFrequencyIsUnparseable_ShouldStillProcessTheRest() {
+            // GIVEN: the first task's frequency can't be parsed by FrequencyUtils
+            // (simulating stale/manually-inserted data, since the DTO validation
+            // that normally guards this shouldn't let it happen going forward)
+            mockRecurringTask.setFrequency("not a valid frequency");
+            mockRecurringTask.setLatestGeneratedDate(LocalDateTime.now().minusYears(10));
+
+            RecurringTask secondRecurringTask = RecurringTask.builder()
+                    .id(2L)
+                    .title("Review notes")
+                    .frequency("DAILY")
+                    .active(true)
+                    .latestGeneratedDate(null)
+                    .build();
+
+            when(recurringTaskRepository.findAllByActiveTrue())
+                    .thenReturn(java.util.List.of(mockRecurringTask, secondRecurringTask));
+
+            // WHEN:
+            recurringTaskSchedulerService.generateTask();
+
+            // THEN: the broken task is skipped (no save at all for it), but the
+            // second, valid task is still generated normally.
+            verify(taskRepository, times(1)).save(any(Task.class));
+            verify(recurringTaskRepository, never()).save(mockRecurringTask);
+            verify(recurringTaskRepository, times(1)).save(secondRecurringTask);
+        }
     }
 }
