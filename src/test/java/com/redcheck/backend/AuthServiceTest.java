@@ -1,10 +1,14 @@
 package com.redcheck.backend;
 
+import com.redcheck.backend.dto.request.GoogleAuthRequestDTO;
 import com.redcheck.backend.dto.request.LoginRequestDTO;
 import com.redcheck.backend.dto.request.RegisterRequestDTO;
 import com.redcheck.backend.dto.response.AuthResponseDTO;
 import com.redcheck.backend.entity.User;
+import com.redcheck.backend.exception.InvalidGoogleTokenException;
 import com.redcheck.backend.repository.UserRepository;
+import com.redcheck.backend.security.GoogleTokenVerifierService;
+import com.redcheck.backend.security.GoogleUserInfo;
 import com.redcheck.backend.security.JwtService;
 import com.redcheck.backend.service.AuthService;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,6 +45,9 @@ public class AuthServiceTest {
 
     @Mock
     private AuthenticationManager authenticationManager;
+
+    @Mock
+    private GoogleTokenVerifierService googleTokenVerifierService;
 
     @InjectMocks
     private AuthService authService;
@@ -203,6 +210,110 @@ public class AuthServiceTest {
             // THEN
             verify(userRepository, times(1)).findByEmailOrUsername(any());
             verify(authenticationManager, never()).authenticate(any());
+            verify(jwtService, never()).generateToken(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("Method: loginWithGoogle")
+    class LoginWithGoogleTests {
+
+        private final GoogleAuthRequestDTO mockGoogleRequest =
+                GoogleAuthRequestDTO.builder().idToken("mock.id.token").build();
+
+        @Test
+        @DisplayName("When the Google id already belongs to a user should authenticate and return token")
+        void loginWithGoogle_WhenGoogleIdMatchesExistingUser_ShouldReturnToken() {
+            // GIVEN
+            GoogleUserInfo googleUserInfo = new GoogleUserInfo("google-sub-1", mockUser.getEmail(), true, "Test User");
+            when(googleTokenVerifierService.verify(mockGoogleRequest.idToken()))
+                    .thenReturn(googleUserInfo);
+            when(userRepository.findByGoogleId("google-sub-1"))
+                    .thenReturn(Optional.of(mockUser));
+            when(jwtService.generateToken(mockUser))
+                    .thenReturn(MOCK_TOKEN);
+
+            // WHEN
+            AuthResponseDTO result = authService.loginWithGoogle(mockGoogleRequest);
+
+            // THEN
+            assertNotNull(result);
+            assertEquals(MOCK_TOKEN, result.token());
+            verify(userRepository, never()).save(any(User.class));
+        }
+
+        @Test
+        @DisplayName("When a password account already exists with the same email should link the Google id")
+        void loginWithGoogle_WhenEmailMatchesExistingUser_ShouldLinkGoogleIdAndReturnToken() {
+            // GIVEN
+            GoogleUserInfo googleUserInfo = new GoogleUserInfo("google-sub-2", mockUser.getEmail(), true, "Test User");
+            when(googleTokenVerifierService.verify(mockGoogleRequest.idToken()))
+                    .thenReturn(googleUserInfo);
+            when(userRepository.findByGoogleId("google-sub-2"))
+                    .thenReturn(Optional.empty());
+            when(userRepository.findByEmail(mockUser.getEmail()))
+                    .thenReturn(Optional.of(mockUser));
+            when(userRepository.save(mockUser))
+                    .thenReturn(mockUser);
+            when(jwtService.generateToken(mockUser))
+                    .thenReturn(MOCK_TOKEN);
+
+            // WHEN
+            AuthResponseDTO result = authService.loginWithGoogle(mockGoogleRequest);
+
+            // THEN
+            assertNotNull(result);
+            assertEquals(MOCK_TOKEN, result.token());
+            assertEquals("google-sub-2", mockUser.getGoogleId());
+            verify(userRepository, times(1)).save(mockUser);
+        }
+
+        @Test
+        @DisplayName("When no user matches should create a new user and return token")
+        void loginWithGoogle_WhenNewUser_ShouldCreateUserAndReturnToken() {
+            // GIVEN
+            GoogleUserInfo googleUserInfo = new GoogleUserInfo("google-sub-3", "brand.new@redcheck.com", true, "Brand New");
+            when(googleTokenVerifierService.verify(mockGoogleRequest.idToken()))
+                    .thenReturn(googleUserInfo);
+            when(userRepository.findByGoogleId("google-sub-3"))
+                    .thenReturn(Optional.empty());
+            when(userRepository.findByEmail("brand.new@redcheck.com"))
+                    .thenReturn(Optional.empty());
+            when(userRepository.existsByUsername(any()))
+                    .thenReturn(false);
+            when(userRepository.save(any(User.class)))
+                    .thenAnswer(invocation -> invocation.getArgument(0));
+            when(jwtService.generateToken(any(User.class)))
+                    .thenReturn(MOCK_TOKEN);
+
+            // WHEN
+            AuthResponseDTO result = authService.loginWithGoogle(mockGoogleRequest);
+
+            // THEN
+            assertNotNull(result);
+            assertEquals(MOCK_TOKEN, result.token());
+            verify(userRepository, times(1)).save(argThat(user ->
+                    "brandnew".equals(user.getActualUsername())
+                            && "google-sub-3".equals(user.getGoogleId())
+                            && user.getPassword() == null
+            ));
+        }
+
+        @Test
+        @DisplayName("When Google reports an unverified email should throw exception")
+        void loginWithGoogle_WhenEmailNotVerified_ShouldThrowException() {
+            // GIVEN
+            GoogleUserInfo googleUserInfo = new GoogleUserInfo("google-sub-4", "unverified@redcheck.com", false, "Unverified");
+            when(googleTokenVerifierService.verify(mockGoogleRequest.idToken()))
+                    .thenReturn(googleUserInfo);
+
+            // WHEN
+            assertThrows(InvalidGoogleTokenException.class, () -> {
+                authService.loginWithGoogle(mockGoogleRequest);
+            });
+
+            // THEN
+            verify(userRepository, never()).findByGoogleId(any());
             verify(jwtService, never()).generateToken(any());
         }
     }

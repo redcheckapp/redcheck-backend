@@ -1,5 +1,6 @@
 package com.redcheck.backend.controller;
 
+import com.redcheck.backend.dto.request.GoogleAuthRequestDTO;
 import com.redcheck.backend.dto.request.LoginRequestDTO;
 import com.redcheck.backend.dto.request.RegisterRequestDTO;
 import com.redcheck.backend.dto.response.AuthResponseDTO;
@@ -24,5 +25,10 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<AuthResponseDTO> login(@RequestBody LoginRequestDTO requestDTO) {
         return ResponseEntity.ok(authService.login(requestDTO));
+    }
+
+    @PostMapping("/google")
+    public ResponseEntity<AuthResponseDTO> loginWithGoogle(@RequestBody GoogleAuthRequestDTO requestDTO) {
+        return ResponseEntity.ok(authService.loginWithGoogle(requestDTO));
     }
 }

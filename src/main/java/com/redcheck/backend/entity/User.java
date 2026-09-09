@@ -30,8 +30,12 @@ public class User implements UserDetails {
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
+    // Nullable: a user who signed up via "Sign in with Google" has no
+    // password of their own (see AuthService#loginWithGoogle).
     private String password;
+
+    @Column(name = "google_id", unique = true)
+    private String googleId;
 
     @Column(name = "creation_date", nullable = false, updatable = false)
     private LocalDateTime creationDate;

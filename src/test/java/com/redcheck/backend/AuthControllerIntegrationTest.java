@@ -1,6 +1,7 @@
 package com.redcheck.backend;
 
 import com.redcheck.backend.controller.AuthController;
+import com.redcheck.backend.dto.request.GoogleAuthRequestDTO;
 import com.redcheck.backend.dto.request.LoginRequestDTO;
 import com.redcheck.backend.dto.request.RegisterRequestDTO;
 import com.redcheck.backend.dto.response.AuthResponseDTO;
@@ -44,6 +45,7 @@ public class AuthControllerIntegrationTest {
 
     private RegisterRequestDTO registerRequestDTO;
     private LoginRequestDTO loginRequestDTO;
+    private GoogleAuthRequestDTO googleAuthRequestDTO;
     private AuthResponseDTO authResponseDTO;
     private final String MOCK_TOKEN = "mock.jwt.token.123";
 
@@ -58,6 +60,10 @@ public class AuthControllerIntegrationTest {
         loginRequestDTO = LoginRequestDTO.builder()
                 .emailOrUsername("newuser@redcheck.com")
                 .password("password123")
+                .build();
+
+        googleAuthRequestDTO = GoogleAuthRequestDTO.builder()
+                .idToken("mock.id.token")
                 .build();
 
         authResponseDTO = AuthResponseDTO.builder()
@@ -99,6 +105,27 @@ public class AuthControllerIntegrationTest {
             String jsonRequest = objectMapper.writeValueAsString(loginRequestDTO);
 
             mockMvc.perform(post("/auth/login")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(jsonRequest))
+                    .andExpect(status().isOk())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.token").value(MOCK_TOKEN));
+        }
+    }
+
+    @Nested
+    @DisplayName("Endpoint: POST /auth/google")
+    class GoogleTests {
+
+        @Test
+        @DisplayName("With a valid Google id token should return ok status and token")
+        void loginWithGoogle_WithValidIdToken_ShouldReturnOkAndToken() throws Exception {
+            when(authService.loginWithGoogle(any(GoogleAuthRequestDTO.class)))
+                    .thenReturn(authResponseDTO);
+
+            String jsonRequest = objectMapper.writeValueAsString(googleAuthRequestDTO);
+
+            mockMvc.perform(post("/auth/google")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(jsonRequest))
