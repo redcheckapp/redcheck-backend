@@ -3,6 +3,8 @@ package com.redcheck.backend.service;
 import com.redcheck.backend.dto.update.SubjectArchiveDTO;
 import com.redcheck.backend.dto.request.SubjectRequestDTO;
 import com.redcheck.backend.dto.response.SubjectResponseDTO;
+import com.redcheck.backend.dto.response.SubjectWithTasksResponseDTO;
+import com.redcheck.backend.dto.response.TaskResponseDTO;
 import com.redcheck.backend.entity.Subject;
 import com.redcheck.backend.entity.User;
 import com.redcheck.backend.exception.SubjectAlreadyExistsException;
@@ -14,7 +16,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -22,6 +26,7 @@ import java.util.stream.Collectors;
 public class SubjectService {
 
     private final SubjectRepository subjectRepository;
+    private final TaskService taskService;
 
     public List<SubjectResponseDTO> getAllSubjects(User currentUser, Boolean archived, Boolean deleted) {
         List<Subject> subjects;
@@ -39,6 +44,29 @@ public class SubjectService {
 
         return subjects.stream()
                 .map(this::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    // Dashboard-oriented variant of getAllSubjects: returns every non-deleted
+    // subject with its dashboard-relevant tasks (pending, or completed today)
+    // already nested, via one subjects query + one tasks query total, instead
+    // of the frontend previously firing one tasks request per subject.
+    public List<SubjectWithTasksResponseDTO> getAllSubjectsWithTasks(User currentUser) {
+        List<Subject> subjects = subjectRepository.findAllByUserAndDeletedFalse(currentUser);
+        List<TaskResponseDTO> tasks = taskService.getPendingOrTodayTasks(currentUser);
+
+        Map<Long, List<TaskResponseDTO>> tasksBySubjectId = tasks.stream()
+                .collect(Collectors.groupingBy(TaskResponseDTO::subjectId));
+
+        return subjects.stream()
+                .map(subject -> SubjectWithTasksResponseDTO.builder()
+                        .id(subject.getId())
+                        .name(subject.getName())
+                        .description(subject.getDescription())
+                        .archived(subject.isArchived())
+                        .deleted(subject.isDeleted())
+                        .tasks(tasksBySubjectId.getOrDefault(subject.getId(), Collections.emptyList()))
+                        .build())
                 .collect(Collectors.toList());
     }
 

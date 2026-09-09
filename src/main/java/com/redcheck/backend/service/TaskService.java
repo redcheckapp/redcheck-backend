@@ -62,6 +62,22 @@ public class TaskService {
                 .collect(Collectors.toList());
     }
 
+    // Same "pending or completed today" filter as getAllTask(completed=false),
+    // but without the in-memory subjectId filter — used to fetch every
+    // subject's dashboard-relevant tasks in a single query instead of one
+    // query per subject (see SubjectService#getAllSubjectsWithTasks).
+    public List<TaskResponseDTO> getPendingOrTodayTasks(User currentUser) {
+        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+        LocalDateTime endOfDay = LocalDate.now().atTime(LocalTime.MAX);
+
+        List<Task> rawTasks = taskRepository.findPendingOrCompletedTodayAndDeletedFalse(
+                currentUser.getId(), startOfDay, endOfDay);
+
+        return rawTasks.stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public TaskResponseDTO createTask(Long subjectId, TaskRequestDTO requestDTO, User currentUser) {
 

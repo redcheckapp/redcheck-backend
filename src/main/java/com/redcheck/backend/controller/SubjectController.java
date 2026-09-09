@@ -3,6 +3,7 @@ package com.redcheck.backend.controller;
 import com.redcheck.backend.dto.update.SubjectArchiveDTO;
 import com.redcheck.backend.dto.request.SubjectRequestDTO;
 import com.redcheck.backend.dto.response.SubjectResponseDTO;
+import com.redcheck.backend.dto.response.SubjectWithTasksResponseDTO;
 import com.redcheck.backend.entity.User;
 import com.redcheck.backend.service.SubjectService;
 import jakarta.validation.Valid;
@@ -29,6 +30,14 @@ public class SubjectController {
             @RequestParam(required = false) Boolean deleted) {
 
         List<SubjectResponseDTO> response = subjectService.getAllSubjects(currentUser, archived, deleted);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/with-tasks")
+    public ResponseEntity<List<SubjectWithTasksResponseDTO>> getAllWithTasks(
+            @AuthenticationPrincipal User currentUser) {
+
+        List<SubjectWithTasksResponseDTO> response = subjectService.getAllSubjectsWithTasks(currentUser);
         return ResponseEntity.ok(response);
     }
 

@@ -2,6 +2,8 @@ package com.redcheck.backend;
 
 import com.redcheck.backend.dto.request.SubjectRequestDTO;
 import com.redcheck.backend.dto.response.SubjectResponseDTO;
+import com.redcheck.backend.dto.response.SubjectWithTasksResponseDTO;
+import com.redcheck.backend.dto.response.TaskResponseDTO;
 import com.redcheck.backend.dto.update.SubjectArchiveDTO;
 import com.redcheck.backend.entity.Subject;
 import com.redcheck.backend.entity.User;
@@ -10,6 +12,7 @@ import com.redcheck.backend.exception.SubjectNotFoundException;
 import com.redcheck.backend.exception.SubjectNotOwnedException;
 import com.redcheck.backend.repository.SubjectRepository;
 import com.redcheck.backend.service.SubjectService;
+import com.redcheck.backend.service.TaskService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -33,6 +36,9 @@ public class SubjectServiceTest {
 
     @Mock
     private SubjectRepository subjectRepository;
+
+    @Mock
+    private TaskService taskService;
 
     @InjectMocks
     private SubjectService subjectService;
@@ -94,6 +100,55 @@ public class SubjectServiceTest {
             assertEquals(1, result.size());
             assertEquals(mockSubject.getId(), result.get(0).id());
             verify(subjectRepository, times(1)).findAllByUserAndDeletedFalse(user);
+        }
+    }
+
+    @Nested
+    @DisplayName("Method: getAllSubjectsWithTasks")
+    class GetAllSubjectsWithTasksTests {
+
+        @Test
+        @DisplayName("Should fetch subjects and tasks in one query each and group tasks by subject")
+        void getAllSubjectsWithTasks_ShouldGroupTasksBySubjectInOneQueryEach() {
+            // GIVEN
+            TaskResponseDTO taskForSubject = TaskResponseDTO.builder()
+                    .id(100L)
+                    .title("task")
+                    .subjectId(mockSubject.getId())
+                    .build();
+
+            when(subjectRepository.findAllByUserAndDeletedFalse(user))
+                    .thenReturn(Collections.singletonList(mockSubject));
+            when(taskService.getPendingOrTodayTasks(user))
+                    .thenReturn(Collections.singletonList(taskForSubject));
+
+            // WHEN
+            List<SubjectWithTasksResponseDTO> result = subjectService.getAllSubjectsWithTasks(user);
+
+            // THEN
+            assertEquals(1, result.size());
+            assertEquals(mockSubject.getId(), result.get(0).id());
+            assertEquals(1, result.get(0).tasks().size());
+            assertEquals(taskForSubject.id(), result.get(0).tasks().get(0).id());
+            verify(subjectRepository, times(1)).findAllByUserAndDeletedFalse(user);
+            verify(taskService, times(1)).getPendingOrTodayTasks(user);
+        }
+
+        @Test
+        @DisplayName("Should return an empty task list for a subject with no matching tasks")
+        void getAllSubjectsWithTasks_WhenSubjectHasNoTasks_ShouldReturnEmptyTaskList() {
+            // GIVEN
+            when(subjectRepository.findAllByUserAndDeletedFalse(user))
+                    .thenReturn(Collections.singletonList(mockSubject));
+            when(taskService.getPendingOrTodayTasks(user))
+                    .thenReturn(Collections.emptyList());
+
+            // WHEN
+            List<SubjectWithTasksResponseDTO> result = subjectService.getAllSubjectsWithTasks(user);
+
+            // THEN
+            assertEquals(1, result.size());
+            assertTrue(result.get(0).tasks().isEmpty());
         }
     }
 

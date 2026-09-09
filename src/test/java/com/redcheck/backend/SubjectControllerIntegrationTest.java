@@ -3,6 +3,8 @@ package com.redcheck.backend;
 import com.redcheck.backend.controller.SubjectController;
 import com.redcheck.backend.dto.request.SubjectRequestDTO;
 import com.redcheck.backend.dto.response.SubjectResponseDTO;
+import com.redcheck.backend.dto.response.SubjectWithTasksResponseDTO;
+import com.redcheck.backend.dto.response.TaskResponseDTO;
 import com.redcheck.backend.dto.update.SubjectArchiveDTO;
 import com.redcheck.backend.security.JwtService;
 import com.redcheck.backend.service.SubjectService;
@@ -90,6 +92,45 @@ public class SubjectControllerIntegrationTest {
                     .andExpect(MockMvcResultMatchers.jsonPath("$[0].id").value(1L))
                     .andExpect(MockMvcResultMatchers.jsonPath("$[0].name").value("new subject"))
                     .andExpect(MockMvcResultMatchers.jsonPath("$[0].description").value("new description"));
+        }
+    }
+
+    @Nested
+    @DisplayName("Endpoint: GET /with-tasks")
+    class GetAllWithTasksTests {
+
+        @Test
+        @WithMockUser(username = "user@redcheck.com", roles = "USER")
+        @DisplayName("Should return ok and JSON array of subjects with nested tasks")
+        void getAllWithTasks_ShouldReturnOkAndJsonArrayWithNestedTasks() throws Exception {
+            // GIVEN:
+            TaskResponseDTO taskResponseDTO = TaskResponseDTO.builder()
+                    .id(100L)
+                    .title("task")
+                    .subjectId(1L)
+                    .build();
+
+            SubjectWithTasksResponseDTO subjectWithTasksResponseDTO = SubjectWithTasksResponseDTO.builder()
+                    .id(1L)
+                    .name("new subject")
+                    .description("new description")
+                    .tasks(Collections.singletonList(taskResponseDTO))
+                    .build();
+
+            when(subjectService.getAllSubjectsWithTasks(any()))
+                    .thenReturn(Collections.singletonList(subjectWithTasksResponseDTO));
+
+            // WHEN & THEN:
+            mockMvc.perform(get("/subjects/with-tasks")
+                            .contentType(MediaType.APPLICATION_JSON))
+
+                    .andExpect(status().isOk())
+                    .andExpect(MockMvcResultMatchers.content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+
+                    .andExpect(MockMvcResultMatchers.jsonPath("$").isArray())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$[0].id").value(1L))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$[0].tasks").isArray())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$[0].tasks[0].id").value(100L));
         }
     }
 

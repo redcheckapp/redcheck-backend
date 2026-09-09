@@ -119,6 +119,29 @@ class TaskServiceTest {
     }
 
     @Nested
+    @DisplayName("Method: getPendingOrTodayTasks")
+    class GetPendingOrTodayTasksTests {
+
+        @Test
+        @DisplayName("Should return every pending-or-completed-today task across all subjects in one query")
+        void getPendingOrTodayTasks_ShouldReturnAllSubjectsTasksInOneQuery() {
+            // GIVEN
+            when(taskRepository.findPendingOrCompletedTodayAndDeletedFalse(eq(user.getId()), any(), any()))
+                    .thenReturn(Collections.singletonList(mockTask));
+
+            // WHEN
+            List<TaskResponseDTO> result = taskService.getPendingOrTodayTasks(user);
+
+            // THEN
+            assertFalse(result.isEmpty());
+            assertEquals(1, result.size());
+            assertEquals(mockTask.getId(), result.get(0).id());
+            assertEquals(mockSubject.getId(), result.get(0).subjectId());
+            verify(taskRepository, times(1)).findPendingOrCompletedTodayAndDeletedFalse(eq(user.getId()), any(), any());
+        }
+    }
+
+    @Nested
     @DisplayName("Method: createTask")
     class CreateTaskTest {
 
