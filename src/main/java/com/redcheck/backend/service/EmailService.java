@@ -1,21 +1,26 @@
 package com.redcheck.backend.service;
 
-import jakarta.mail.internet.MimeMessage;
+import com.redcheck.backend.dto.request.ResendEmailRequestDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 @Slf4j
 @Service
 public class EmailService {
 
-    private final JavaMailSender mailSender;
+    private static final String RESEND_API_URL = "https://api.resend.com/emails";
 
     @Value("${app.mail.from}")
     private String from;
+
+    @Value("${app.resend.api-key}")
+    private String resendApiKey;
 
     // Reused to build the logo's public URL below (the frontend serves
     // public/icons/icon-192.png as a static asset) — not for the reset
@@ -23,14 +28,21 @@ public class EmailService {
     @Value("${app.frontend.url}")
     private String frontendUrl;
 
-    public EmailService(JavaMailSender mailSender) {
-        this.mailSender = mailSender;
-    }
-
-    // Fire-and-forget, same reasoning as SmartCheckAIService's async AI
-    // call: the caller (PasswordResetService#forgotPassword) must always
-    // return its generic response quickly and regardless of whether sending
-    // actually succeeds, so any failure here is logged, not propagated.
+    // Sent over Resend's HTTPS API (port 443), not SMTP. Production's VPS
+    // provider silently black-holes all outbound SMTP traffic — confirmed
+    // with a raw `openssl s_client` test against ports 587/2587 (STARTTLS)
+    // and 465/2465 (implicit TLS): the TCP handshake completes but the
+    // remote never sends the SMTP banner, on every port, regardless of
+    // provider (this almost certainly would have broken Brevo too — it was
+    // never actually tested from this server, only from a local machine).
+    // HTTPS is unaffected (the app already calls Gemini/the AI engine over
+    // it), so routing through Resend's REST API instead of
+    // spring-boot-starter-mail/JavaMailSender sidesteps the whole problem
+    // rather than chasing ports. Fire-and-forget, same reasoning as
+    // SmartCheckAIService's async external calls: the caller
+    // (PasswordResetService#forgotPassword) must always return its generic
+    // response quickly and regardless of whether sending actually
+    // succeeds, so any failure here is logged, not propagated.
     @Async
     public void sendPasswordResetEmail(String to, String resetLink, String lang) {
         boolean spanish = !"en".equalsIgnoreCase(lang);
@@ -38,14 +50,20 @@ public class EmailService {
 
         log.info("Sending password reset email to {} (from={})", to, from);
         try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, "utf-8");
-            helper.setFrom(from);
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(buildHtml(resetLink, spanish), true);
-            mailSender.send(message);
-            log.info("Password reset email accepted by the SMTP server for {}", to);
+            RestTemplate restTemplate = new RestTemplate();
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(resendApiKey);
+
+            ResendEmailRequestDTO requestPayload = ResendEmailRequestDTO.builder()
+                    .from(from)
+                    .to(to)
+                    .subject(subject)
+                    .html(buildHtml(resetLink, spanish))
+                    .build();
+
+            restTemplate.postForEntity(RESEND_API_URL, new HttpEntity<>(requestPayload, headers), String.class);
+            log.info("Password reset email accepted by Resend for {}", to);
         } catch (Exception e) {
             log.error("Failed to send password reset email to {}", to, e);
         }
