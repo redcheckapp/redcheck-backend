@@ -5,6 +5,7 @@ import com.redcheck.backend.dto.response.UserResponseDTO;
 import com.redcheck.backend.entity.User;
 import com.redcheck.backend.exception.DemoAccountRestrictedException;
 import com.redcheck.backend.exception.InvalidCurrentPasswordException;
+import com.redcheck.backend.exception.NewPasswordSameAsCurrentException;
 import com.redcheck.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -74,6 +75,13 @@ public class UserController {
         } catch (InvalidCurrentPasswordException e) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)
+                    .body("{\"error\": \"" + e.getMessage() + "\"}");
+        } catch (NewPasswordSameAsCurrentException e) {
+            // A distinct status from InvalidCurrentPasswordException's 400
+            // so the frontend can tell the two apart without parsing the
+            // (English-only) message body.
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
                     .body("{\"error\": \"" + e.getMessage() + "\"}");
         }
 

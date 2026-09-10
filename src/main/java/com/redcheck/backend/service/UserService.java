@@ -4,6 +4,7 @@ import com.redcheck.backend.dto.request.ChangePasswordRequestDTO;
 import com.redcheck.backend.entity.User;
 import com.redcheck.backend.exception.DemoAccountRestrictedException;
 import com.redcheck.backend.exception.InvalidCurrentPasswordException;
+import com.redcheck.backend.exception.NewPasswordSameAsCurrentException;
 import com.redcheck.backend.repository.UserRepository;
 import com.redcheck.backend.util.DemoAccountUtils;
 import jakarta.transaction.Transactional;
@@ -49,6 +50,13 @@ public class UserService {
                 && (requestDTO.currentPassword() == null
                     || !passwordEncoder.matches(requestDTO.currentPassword(), user.getPassword()))) {
             throw new InvalidCurrentPasswordException();
+        }
+
+        // Only meaningful when there's an existing password to compare
+        // against — a Google-only account "setting" its first password has
+        // nothing to collide with.
+        if (user.getPassword() != null && passwordEncoder.matches(requestDTO.newPassword(), user.getPassword())) {
+            throw new NewPasswordSameAsCurrentException();
         }
 
         user.setPassword(passwordEncoder.encode(requestDTO.newPassword()));

@@ -5,6 +5,7 @@ import com.redcheck.backend.dto.request.ChangePasswordRequestDTO;
 import com.redcheck.backend.entity.User;
 import com.redcheck.backend.exception.DemoAccountRestrictedException;
 import com.redcheck.backend.exception.InvalidCurrentPasswordException;
+import com.redcheck.backend.exception.NewPasswordSameAsCurrentException;
 import com.redcheck.backend.security.JwtService;
 import com.redcheck.backend.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -146,6 +147,23 @@ public class UserControllerIntegrationTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(requestDTO)))
                     .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("When new password equals the current one should return conflict")
+        void changePassword_WhenNewPasswordEqualsCurrent_ShouldReturnConflict() throws Exception {
+            // GIVEN
+            ChangePasswordRequestDTO requestDTO = new ChangePasswordRequestDTO("currentPassword", "currentPassword");
+            doThrow(new NewPasswordSameAsCurrentException())
+                    .when(userService).changePassword(anyString(), any(ChangePasswordRequestDTO.class));
+
+            // WHEN & THEN
+            mockMvc.perform(patch("/users/me/password")
+                            .with(csrf())
+                            .with(authentication(mockAuthToken))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(requestDTO)))
+                    .andExpect(status().isConflict());
         }
 
         @Test

@@ -4,6 +4,7 @@ import com.redcheck.backend.dto.request.ChangePasswordRequestDTO;
 import com.redcheck.backend.entity.User;
 import com.redcheck.backend.exception.DemoAccountRestrictedException;
 import com.redcheck.backend.exception.InvalidCurrentPasswordException;
+import com.redcheck.backend.exception.NewPasswordSameAsCurrentException;
 import com.redcheck.backend.repository.UserRepository;
 import com.redcheck.backend.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -154,6 +155,22 @@ public class UserServiceTest {
             });
 
             verify(userRepository, never()).findByEmail(any());
+            verify(userRepository, never()).save(any(User.class));
+        }
+
+        @Test
+        @DisplayName("When new password equals the current one should throw NewPasswordSameAsCurrentException")
+        void changePassword_WhenNewPasswordEqualsCurrent_ShouldThrowException() {
+            // GIVEN
+            ChangePasswordRequestDTO requestDTO = new ChangePasswordRequestDTO("currentPassword", "currentPassword");
+            when(userRepository.findByEmail(userEmail)).thenReturn(Optional.of(mockUser));
+            when(passwordEncoder.matches("currentPassword", "encodedCurrentPassword")).thenReturn(true);
+
+            // WHEN & THEN
+            assertThrows(NewPasswordSameAsCurrentException.class, () -> {
+                userService.changePassword(userEmail, requestDTO);
+            });
+
             verify(userRepository, never()).save(any(User.class));
         }
 
