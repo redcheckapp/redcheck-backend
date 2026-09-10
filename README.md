@@ -114,6 +114,7 @@ graph TD
 
     Gateway["API Gateway / Frontend<br>(External Requests)"]:::proxy
     Gemini["Google Gemini 2.5 Flash<br>(External LLM API)"]:::external
+    Resend["Resend<br>(External Email API)"]:::external
 
     %% Backend Isolation Network
     subgraph DockerNet ["Internal Network: redcheck-net"]
@@ -139,6 +140,7 @@ graph TD
     SmartCheck -- "RAG Augmented Prompt" --> Gemini
     Gemini -. "Strict JSON Schema" .-> SmartCheck
     SmartCheck -. "200 OK (Validated Daily Plan)" .-> Spring
+    Spring -- "POST /emails<br>(Password-Reset HTML)" --> Resend
 ```
 
 ## Copyright and License
