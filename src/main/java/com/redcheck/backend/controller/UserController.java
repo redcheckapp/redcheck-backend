@@ -3,6 +3,7 @@ package com.redcheck.backend.controller;
 import com.redcheck.backend.dto.request.ChangePasswordRequestDTO;
 import com.redcheck.backend.dto.response.UserResponseDTO;
 import com.redcheck.backend.entity.User;
+import com.redcheck.backend.exception.DemoAccountRestrictedException;
 import com.redcheck.backend.exception.InvalidCurrentPasswordException;
 import com.redcheck.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -61,6 +62,15 @@ public class UserController {
                                              @RequestBody ChangePasswordRequestDTO requestDTO) {
         try {
             userService.changePassword(currentUser.getEmail(), requestDTO);
+        } catch (DemoAccountRestrictedException e) {
+            // Same bilingual-by-account convention as deleteMyAccount above.
+            boolean spanish = "demo-es@redcheck.com".equalsIgnoreCase(currentUser.getEmail());
+            String message = spanish
+                    ? "Acción denegada. La contraseña de la cuenta de demostración no se puede cambiar."
+                    : "Action denied. The demo account's password cannot be changed.";
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body("{\"error\": \"" + message + "\"}");
         } catch (InvalidCurrentPasswordException e) {
             return ResponseEntity
                     .status(HttpStatus.BAD_REQUEST)

@@ -100,6 +100,23 @@ public class PasswordResetServiceTest {
             verify(passwordResetTokenRepository, never()).save(any(PasswordResetToken.class));
             verify(emailService, never()).sendPasswordResetEmail(anyString(), anyString(), any());
         }
+
+        @Test
+        @DisplayName("When the account is a demo account should do nothing")
+        void forgotPassword_WhenDemoAccount_ShouldDoNothing() {
+            User demoUser = User.builder()
+                    .username("demo-es")
+                    .email("demo-es@redcheck.com")
+                    .password("demoPassword")
+                    .build();
+            demoUser.setId(2L);
+            when(userRepository.findByEmail("demo-es@redcheck.com")).thenReturn(Optional.of(demoUser));
+
+            passwordResetService.forgotPassword("demo-es@redcheck.com", "es");
+
+            verify(passwordResetTokenRepository, never()).save(any(PasswordResetToken.class));
+            verify(emailService, never()).sendPasswordResetEmail(anyString(), anyString(), any());
+        }
     }
 
     @Nested
@@ -180,6 +197,29 @@ public class PasswordResetServiceTest {
                     passwordResetService.resetPassword("valid-token", "short"));
 
             verify(passwordResetTokenRepository, never()).findByToken(anyString());
+        }
+
+        @Test
+        @DisplayName("With a token belonging to a demo account should throw InvalidResetTokenException")
+        void resetPassword_WithDemoAccountToken_ShouldThrowException() {
+            User demoUser = User.builder()
+                    .username("demo-es")
+                    .email("demo-es@redcheck.com")
+                    .password("demoPassword")
+                    .build();
+            demoUser.setId(2L);
+            PasswordResetToken token = PasswordResetToken.builder()
+                    .token("demo-token")
+                    .user(demoUser)
+                    .expiryDate(LocalDateTime.now().plusMinutes(10))
+                    .used(false)
+                    .build();
+            when(passwordResetTokenRepository.findByToken("demo-token")).thenReturn(Optional.of(token));
+
+            assertThrows(InvalidResetTokenException.class, () ->
+                    passwordResetService.resetPassword("demo-token", "newPassword123"));
+
+            verify(userRepository, never()).save(any(User.class));
         }
     }
 }

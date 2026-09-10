@@ -3,6 +3,7 @@ package com.redcheck.backend;
 import com.redcheck.backend.controller.UserController;
 import com.redcheck.backend.dto.request.ChangePasswordRequestDTO;
 import com.redcheck.backend.entity.User;
+import com.redcheck.backend.exception.DemoAccountRestrictedException;
 import com.redcheck.backend.exception.InvalidCurrentPasswordException;
 import com.redcheck.backend.security.JwtService;
 import com.redcheck.backend.service.UserService;
@@ -145,6 +146,35 @@ public class UserControllerIntegrationTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(requestDTO)))
                     .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("For the demo account should return forbidden")
+        void changePassword_ForDemoAccount_ShouldReturnForbidden() throws Exception {
+            // GIVEN
+            User demoUser = User.builder()
+                    .username("demo-es")
+                    .email("demo-es@redcheck.com")
+                    .password("demoPassword")
+                    .build();
+            demoUser.setId(2L);
+            UsernamePasswordAuthenticationToken demoAuthToken = new UsernamePasswordAuthenticationToken(
+                    demoUser,
+                    null,
+                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
+            );
+
+            ChangePasswordRequestDTO requestDTO = new ChangePasswordRequestDTO("currentPassword", "newPassword123");
+            doThrow(new DemoAccountRestrictedException())
+                    .when(userService).changePassword(anyString(), any(ChangePasswordRequestDTO.class));
+
+            // WHEN & THEN
+            mockMvc.perform(patch("/users/me/password")
+                            .with(csrf())
+                            .with(authentication(demoAuthToken))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(requestDTO)))
+                    .andExpect(status().isForbidden());
         }
     }
 }

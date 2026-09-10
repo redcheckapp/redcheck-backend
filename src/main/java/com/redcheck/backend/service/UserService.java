@@ -2,8 +2,10 @@ package com.redcheck.backend.service;
 
 import com.redcheck.backend.dto.request.ChangePasswordRequestDTO;
 import com.redcheck.backend.entity.User;
+import com.redcheck.backend.exception.DemoAccountRestrictedException;
 import com.redcheck.backend.exception.InvalidCurrentPasswordException;
 import com.redcheck.backend.repository.UserRepository;
+import com.redcheck.backend.util.DemoAccountUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,6 +28,13 @@ public class UserService {
 
     @Transactional
     public void changePassword(String email, ChangePasswordRequestDTO requestDTO) {
+        // Guards the same shared demo identities deleteMyAccount protects
+        // in UserController — anyone could otherwise lock every other demo
+        // user out by changing the one password they all rely on.
+        if (DemoAccountUtils.isDemoAccount(email)) {
+            throw new DemoAccountRestrictedException();
+        }
+
         if (requestDTO.newPassword() == null || requestDTO.newPassword().length() < 8) {
             throw new IllegalArgumentException("New password must be at least 8 characters long");
         }

@@ -2,6 +2,7 @@ package com.redcheck.backend;
 
 import com.redcheck.backend.dto.request.ChangePasswordRequestDTO;
 import com.redcheck.backend.entity.User;
+import com.redcheck.backend.exception.DemoAccountRestrictedException;
 import com.redcheck.backend.exception.InvalidCurrentPasswordException;
 import com.redcheck.backend.repository.UserRepository;
 import com.redcheck.backend.service.UserService;
@@ -150,6 +151,21 @@ public class UserServiceTest {
             // WHEN & THEN
             assertThrows(IllegalArgumentException.class, () -> {
                 userService.changePassword(userEmail, requestDTO);
+            });
+
+            verify(userRepository, never()).findByEmail(any());
+            verify(userRepository, never()).save(any(User.class));
+        }
+
+        @Test
+        @DisplayName("When the account is a demo account should throw DemoAccountRestrictedException")
+        void changePassword_WhenDemoAccount_ShouldThrowException() {
+            // GIVEN
+            ChangePasswordRequestDTO requestDTO = new ChangePasswordRequestDTO("currentPassword", "newPassword123");
+
+            // WHEN & THEN
+            assertThrows(DemoAccountRestrictedException.class, () -> {
+                userService.changePassword("demo-es@redcheck.com", requestDTO);
             });
 
             verify(userRepository, never()).findByEmail(any());

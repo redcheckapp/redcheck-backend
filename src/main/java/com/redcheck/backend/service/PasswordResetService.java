@@ -5,6 +5,7 @@ import com.redcheck.backend.entity.User;
 import com.redcheck.backend.exception.InvalidResetTokenException;
 import com.redcheck.backend.repository.PasswordResetTokenRepository;
 import com.redcheck.backend.repository.UserRepository;
+import com.redcheck.backend.util.DemoAccountUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -40,6 +41,14 @@ public class PasswordResetService {
                 return;
             }
 
+            // Same shared-identity protection as UserService#changePassword
+            // — a reset link would let anyone lock every other demo user
+            // out. Silently no-op'd, same reasoning as above: the generic
+            // response never varies, so this isn't observable either.
+            if (DemoAccountUtils.isDemoAccount(user.getEmail())) {
+                return;
+            }
+
             passwordResetTokenRepository.deleteUnusedByUser(user);
 
             PasswordResetToken resetToken = PasswordResetToken.builder()
@@ -63,7 +72,12 @@ public class PasswordResetService {
         PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
                 .orElseThrow(InvalidResetTokenException::new);
 
-        if (resetToken.isUsed() || resetToken.isExpired()) {
+        // Defense in depth: forgotPassword already refuses to issue a token
+        // for a demo account, but a token issued before that guard existed
+        // (or reached some other way) must still be rejected here — treated
+        // as just another invalid token, not a distinct error, so this
+        // never reveals anything about the account behind it either.
+        if (resetToken.isUsed() || resetToken.isExpired() || DemoAccountUtils.isDemoAccount(resetToken.getUser().getEmail())) {
             throw new InvalidResetTokenException();
         }
 
