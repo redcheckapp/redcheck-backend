@@ -1,12 +1,16 @@
 package com.redcheck.backend;
 
 import com.redcheck.backend.controller.AuthController;
+import com.redcheck.backend.dto.request.ForgotPasswordRequestDTO;
 import com.redcheck.backend.dto.request.GoogleAuthRequestDTO;
 import com.redcheck.backend.dto.request.LoginRequestDTO;
 import com.redcheck.backend.dto.request.RegisterRequestDTO;
+import com.redcheck.backend.dto.request.ResetPasswordRequestDTO;
 import com.redcheck.backend.dto.response.AuthResponseDTO;
+import com.redcheck.backend.exception.InvalidResetTokenException;
 import com.redcheck.backend.security.JwtService;
 import com.redcheck.backend.service.AuthService;
+import com.redcheck.backend.service.PasswordResetService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -21,6 +25,9 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -39,6 +46,9 @@ public class AuthControllerIntegrationTest {
 
     @MockitoBean
     private AuthService authService;
+
+    @MockitoBean
+    private PasswordResetService passwordResetService;
 
     @MockitoBean
     private JwtService jwtService;
@@ -131,6 +141,68 @@ public class AuthControllerIntegrationTest {
                             .content(jsonRequest))
                     .andExpect(status().isOk())
                     .andExpect(MockMvcResultMatchers.jsonPath("$.token").value(MOCK_TOKEN));
+        }
+    }
+
+    @Nested
+    @DisplayName("Endpoint: POST /auth/forgot-password")
+    class ForgotPasswordTests {
+
+        @Test
+        @DisplayName("Should always return ok, regardless of whether the email is registered")
+        void forgotPassword_ShouldAlwaysReturnOk() throws Exception {
+            doNothing().when(passwordResetService).forgotPassword(anyString(), any());
+
+            ForgotPasswordRequestDTO requestDTO = ForgotPasswordRequestDTO.builder()
+                    .email("someone@redcheck.com")
+                    .lang("es")
+                    .build();
+
+            mockMvc.perform(post("/auth/forgot-password")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(requestDTO)))
+                    .andExpect(status().isOk());
+        }
+    }
+
+    @Nested
+    @DisplayName("Endpoint: POST /auth/reset-password")
+    class ResetPasswordTests {
+
+        @Test
+        @DisplayName("With a valid token should return no content")
+        void resetPassword_WithValidToken_ShouldReturnNoContent() throws Exception {
+            doNothing().when(passwordResetService).resetPassword(anyString(), anyString());
+
+            ResetPasswordRequestDTO requestDTO = ResetPasswordRequestDTO.builder()
+                    .token("valid-token")
+                    .newPassword("newPassword123")
+                    .build();
+
+            mockMvc.perform(post("/auth/reset-password")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(requestDTO)))
+                    .andExpect(status().isNoContent());
+        }
+
+        @Test
+        @DisplayName("With an invalid or expired token should return bad request")
+        void resetPassword_WithInvalidToken_ShouldReturnBadRequest() throws Exception {
+            doThrow(new InvalidResetTokenException())
+                    .when(passwordResetService).resetPassword(anyString(), anyString());
+
+            ResetPasswordRequestDTO requestDTO = ResetPasswordRequestDTO.builder()
+                    .token("expired-token")
+                    .newPassword("newPassword123")
+                    .build();
+
+            mockMvc.perform(post("/auth/reset-password")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(requestDTO)))
+                    .andExpect(status().isBadRequest());
         }
     }
 }

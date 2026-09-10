@@ -17,6 +17,18 @@ spring:
         format_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
 
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:8080}
@@ -24,6 +36,10 @@ app:
     secret: ${JWT_SECRET}
   google:
     client-id: ${GOOGLE_CLIENT_ID:}
+  mail:
+    from: ${MAIL_FROM:RedCheck <no-reply@redcheckapp.com>}
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:5173}
 
 ai:
   engine:
