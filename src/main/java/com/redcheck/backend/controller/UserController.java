@@ -1,7 +1,9 @@
 package com.redcheck.backend.controller;
 
+import com.redcheck.backend.dto.request.ChangePasswordRequestDTO;
 import com.redcheck.backend.dto.response.UserResponseDTO;
 import com.redcheck.backend.entity.User;
+import com.redcheck.backend.exception.InvalidCurrentPasswordException;
 import com.redcheck.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -24,6 +26,7 @@ public class UserController {
         UserResponseDTO responseDTO = UserResponseDTO.builder()
                 .username(currentUser.getActualUsername())
                 .email(currentUser.getEmail())
+                .hasPassword(currentUser.getPassword() != null)
                 .build();
         return ResponseEntity.ok(responseDTO);
     }
@@ -49,6 +52,20 @@ public class UserController {
         }
 
         userService.deleteUser(currentUser.getEmail());
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/me/password")
+    public ResponseEntity<?> changePassword(@AuthenticationPrincipal User currentUser,
+                                             @RequestBody ChangePasswordRequestDTO requestDTO) {
+        try {
+            userService.changePassword(currentUser.getEmail(), requestDTO);
+        } catch (InvalidCurrentPasswordException e) {
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
 
         return ResponseEntity.noContent().build();
     }

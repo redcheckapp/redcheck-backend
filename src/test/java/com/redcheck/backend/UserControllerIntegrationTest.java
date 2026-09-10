@@ -1,7 +1,9 @@
 package com.redcheck.backend;
 
 import com.redcheck.backend.controller.UserController;
+import com.redcheck.backend.dto.request.ChangePasswordRequestDTO;
 import com.redcheck.backend.entity.User;
+import com.redcheck.backend.exception.InvalidCurrentPasswordException;
 import com.redcheck.backend.security.JwtService;
 import com.redcheck.backend.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,15 +18,19 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.Collections;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(UserController.class)
@@ -33,6 +39,9 @@ public class UserControllerIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @MockitoBean
     private UserService userService;
@@ -76,7 +85,8 @@ public class UserControllerIntegrationTest {
                     .andExpect(status().isOk())
                     .andExpect(MockMvcResultMatchers.content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
 
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.username").value(mockUser.getActualUsername()));
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.username").value(mockUser.getActualUsername()))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.hasPassword").value(true));
         }
     }
 
@@ -97,6 +107,44 @@ public class UserControllerIntegrationTest {
                             .contentType(MediaType.APPLICATION_JSON))
 
                     .andExpect(status().isNoContent());
+        }
+    }
+
+    @Nested
+    @DisplayName("Endpoint: PATCH /users/me/password")
+    class ChangePasswordTests {
+
+        @Test
+        @DisplayName("With valid data should return no content")
+        void changePassword_WithValidData_ShouldReturnNoContent() throws Exception {
+            // GIVEN
+            ChangePasswordRequestDTO requestDTO = new ChangePasswordRequestDTO("currentPassword", "newPassword123");
+            doNothing().when(userService).changePassword(anyString(), any(ChangePasswordRequestDTO.class));
+
+            // WHEN & THEN
+            mockMvc.perform(patch("/users/me/password")
+                            .with(csrf())
+                            .with(authentication(mockAuthToken))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(requestDTO)))
+                    .andExpect(status().isNoContent());
+        }
+
+        @Test
+        @DisplayName("With wrong current password should return bad request")
+        void changePassword_WithWrongCurrentPassword_ShouldReturnBadRequest() throws Exception {
+            // GIVEN
+            ChangePasswordRequestDTO requestDTO = new ChangePasswordRequestDTO("wrongPassword", "newPassword123");
+            doThrow(new InvalidCurrentPasswordException())
+                    .when(userService).changePassword(anyString(), any(ChangePasswordRequestDTO.class));
+
+            // WHEN & THEN
+            mockMvc.perform(patch("/users/me/password")
+                            .with(csrf())
+                            .with(authentication(mockAuthToken))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(requestDTO)))
+                    .andExpect(status().isBadRequest());
         }
     }
 }
