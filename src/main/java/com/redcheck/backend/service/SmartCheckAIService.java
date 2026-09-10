@@ -49,6 +49,20 @@ public class SmartCheckAIService {
                 .orElse(null);
     }
 
+    // Guards POST /ai/analyze — asking the engine to prioritize an empty
+    // task list is exactly what used to make runDailySmartAnalysis (and
+    // the AI engine itself) hang indefinitely with nothing to poll for, no
+    // error, no notification. Checked in the controller before this
+    // method's @Async call is even fired, so a request with zero pending
+    // tasks never reaches the engine at all — not just a frontend-side
+    // disabled button, since this endpoint takes no task list on the wire
+    // to begin with (tasks are always read fresh from the DB here), a
+    // request sent directly to the API with any payload hits this same
+    // check regardless.
+    public boolean hasPendingTasks(User currentUser) {
+        return !taskRepository.findAllBySubject_User_IdAndCompletedDateIsNullAndDeletedFalse(currentUser.getId()).isEmpty();
+    }
+
     @Transactional
     public void deleteTodaysAnalysis(User currentUser) {
         aiResponseRepository

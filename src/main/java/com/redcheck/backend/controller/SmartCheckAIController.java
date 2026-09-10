@@ -28,6 +28,10 @@ public class SmartCheckAIController {
             @AuthenticationPrincipal User currentUser,
             @RequestParam(defaultValue = "es") String lang) {
 
+        if (!smartCheckAIService.hasPendingTasks(currentUser)) {
+            return ResponseEntity.badRequest().body("No pending tasks to analyze.");
+        }
+
         smartCheckAIService.deleteTodaysAnalysis(currentUser);
         smartCheckAIService.runDailySmartAnalysis(currentUser, lang);
         return ResponseEntity.ok("Analysis started in the background. We will notify you when it is ready!");
