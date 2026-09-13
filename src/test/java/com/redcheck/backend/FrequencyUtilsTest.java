@@ -20,8 +20,8 @@ public class FrequencyUtilsTest {
     class IsSimpleTests {
 
         @ParameterizedTest
-        @ValueSource(strings = {"DAILY", "WEEKLY", "BIWEEKLY", "MONTHLY"})
-        @DisplayName("Should return true for the 4 known presets")
+        @ValueSource(strings = {"DAILY", "WEEKLY", "BIWEEKLY", "MONTHLY", "YEARLY"})
+        @DisplayName("Should return true for the 5 known presets")
         void isSimple_WhenPreset_ShouldReturnTrue(String preset) {
             assertTrue(FrequencyUtils.isSimple(preset));
         }
@@ -66,10 +66,17 @@ public class FrequencyUtilsTest {
         }
 
         @Test
+        @DisplayName("YEARLY should add one year")
+        void nextExecution_Yearly_ShouldAddOneYear() {
+            LocalDateTime from = LocalDateTime.of(2026, 1, 1, 0, 0);
+            assertEquals(from.plusYears(1), FrequencyUtils.nextExecution("YEARLY", from));
+        }
+
+        @Test
         @DisplayName("Unknown simple-looking value should throw")
         void nextExecution_UnknownValue_ShouldThrow() {
             LocalDateTime from = LocalDateTime.of(2026, 1, 1, 0, 0);
-            assertThrows(IllegalArgumentException.class, () -> FrequencyUtils.nextExecution("YEARLY", from));
+            assertThrows(IllegalArgumentException.class, () -> FrequencyUtils.nextExecution("ANNUALLY", from));
         }
 
         @Test

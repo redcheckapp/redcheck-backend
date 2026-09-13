@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 public class FrequencyUtils {
 
     private static final Set<String> SIMPLE_VALUES = Set.of(
-            "DAILY", "WEEKLY", "BIWEEKLY", "MONTHLY"
+            "DAILY", "WEEKLY", "BIWEEKLY", "MONTHLY", "YEARLY"
     );
 
     // "Monthly on a specific day" custom frequency: "MONTHLY:<day>" where
@@ -47,6 +47,7 @@ public class FrequencyUtils {
                 case "WEEKLY" -> from.plusWeeks(1);
                 case "BIWEEKLY" -> from.plusWeeks(2);
                 case "MONTHLY" -> from.plusMonths(1);
+                case "YEARLY" -> from.plusYears(1);
                 default -> throw new IllegalArgumentException("Unsupported frequency: " + frequency);
             };
         }
