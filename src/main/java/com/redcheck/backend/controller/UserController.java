@@ -1,6 +1,7 @@
 package com.redcheck.backend.controller;
 
 import com.redcheck.backend.dto.request.ChangePasswordRequestDTO;
+import com.redcheck.backend.dto.request.UpdateAliasRequestDTO;
 import com.redcheck.backend.dto.response.UserResponseDTO;
 import com.redcheck.backend.entity.User;
 import com.redcheck.backend.exception.DemoAccountRestrictedException;
@@ -27,6 +28,7 @@ public class UserController {
     public ResponseEntity<UserResponseDTO> getUsername(@AuthenticationPrincipal User currentUser) {
         UserResponseDTO responseDTO = UserResponseDTO.builder()
                 .username(currentUser.getActualUsername())
+                .alias(currentUser.getDisplayAlias())
                 .email(currentUser.getEmail())
                 .hasPassword(currentUser.getPassword() != null)
                 .build();
@@ -83,6 +85,25 @@ public class UserController {
             return ResponseEntity
                     .status(HttpStatus.CONFLICT)
                     .body("{\"error\": \"" + e.getMessage() + "\"}");
+        }
+
+        return ResponseEntity.noContent().build();
+    }
+
+    @PatchMapping("/me/alias")
+    public ResponseEntity<?> updateAlias(@AuthenticationPrincipal User currentUser,
+                                          @RequestBody UpdateAliasRequestDTO requestDTO) {
+        try {
+            userService.updateAlias(currentUser.getEmail(), requestDTO);
+        } catch (DemoAccountRestrictedException e) {
+            // Same bilingual-by-account convention as changePassword above.
+            boolean spanish = "demo-es@redcheck.com".equalsIgnoreCase(currentUser.getEmail());
+            String message = spanish
+                    ? "Acción denegada. El alias de la cuenta de demostración no se puede cambiar."
+                    : "Action denied. The demo account's alias cannot be changed.";
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body("{\"error\": \"" + message + "\"}");
         }
 
         return ResponseEntity.noContent().build();

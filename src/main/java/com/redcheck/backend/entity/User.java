@@ -37,6 +37,13 @@ public class User implements UserDetails {
     @Column(name = "google_id", unique = true)
     private String googleId;
 
+    // Nullable: the display alias (dashboard greeting, "Buenos días, X")
+    // defaults to the username whenever it's unset (see getDisplayAlias) —
+    // deliberately not backfilled with a copy of the username at
+    // registration, so there's no duplicate value to keep in sync. Set only
+    // via PATCH /users/me/alias (see UserService#updateAlias).
+    private String alias;
+
     @Column(name = "creation_date", nullable = false, updatable = false)
     private LocalDateTime creationDate;
 
@@ -63,6 +70,14 @@ public class User implements UserDetails {
 
     public String getActualUsername() {
         return username;
+    }
+
+    // The dashboard greeting shows this instead of the raw username — an
+    // unset/blank alias falls back to the username itself, which is what
+    // makes "no alias chosen yet" the same thing as "alias = username" by
+    // default, with no separate write needed at registration time.
+    public String getDisplayAlias() {
+        return (alias != null && !alias.isBlank()) ? alias : username;
     }
 
     // This method executes automatically before saving the user for the first time

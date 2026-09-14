@@ -1,6 +1,7 @@
 package com.redcheck.backend;
 
 import com.redcheck.backend.dto.request.ChangePasswordRequestDTO;
+import com.redcheck.backend.dto.request.UpdateAliasRequestDTO;
 import com.redcheck.backend.entity.User;
 import com.redcheck.backend.exception.DemoAccountRestrictedException;
 import com.redcheck.backend.exception.InvalidCurrentPasswordException;
@@ -183,6 +184,72 @@ public class UserServiceTest {
             // WHEN & THEN
             assertThrows(DemoAccountRestrictedException.class, () -> {
                 userService.changePassword("demo-es@redcheck.com", requestDTO);
+            });
+
+            verify(userRepository, never()).findByEmail(any());
+            verify(userRepository, never()).save(any(User.class));
+        }
+    }
+
+    @Nested
+    @DisplayName("Method: updateAlias")
+    class UpdateAliasTests {
+
+        @Test
+        @DisplayName("When a valid alias is given should trim and save it")
+        void updateAlias_WithValidAlias_ShouldTrimAndSaveAlias() {
+            // GIVEN
+            UpdateAliasRequestDTO requestDTO = new UpdateAliasRequestDTO("  Sergio  ");
+            when(userRepository.findByEmail(userEmail)).thenReturn(Optional.of(mockUser));
+
+            // WHEN
+            userService.updateAlias(userEmail, requestDTO);
+
+            // THEN
+            assertEquals("Sergio", mockUser.getAlias());
+            verify(userRepository, times(1)).save(mockUser);
+        }
+
+        @Test
+        @DisplayName("When alias is blank should reset it to null (defaults back to username)")
+        void updateAlias_WithBlankAlias_ShouldResetToNull() {
+            // GIVEN
+            mockUser.setAlias("Sergio");
+            UpdateAliasRequestDTO requestDTO = new UpdateAliasRequestDTO("   ");
+            when(userRepository.findByEmail(userEmail)).thenReturn(Optional.of(mockUser));
+
+            // WHEN
+            userService.updateAlias(userEmail, requestDTO);
+
+            // THEN
+            assertEquals(null, mockUser.getAlias());
+            verify(userRepository, times(1)).save(mockUser);
+        }
+
+        @Test
+        @DisplayName("When alias is too long should throw IllegalArgumentException")
+        void updateAlias_WhenAliasTooLong_ShouldThrowException() {
+            // GIVEN
+            UpdateAliasRequestDTO requestDTO = new UpdateAliasRequestDTO("a".repeat(31));
+
+            // WHEN & THEN
+            assertThrows(IllegalArgumentException.class, () -> {
+                userService.updateAlias(userEmail, requestDTO);
+            });
+
+            verify(userRepository, never()).findByEmail(any());
+            verify(userRepository, never()).save(any(User.class));
+        }
+
+        @Test
+        @DisplayName("When the account is a demo account should throw DemoAccountRestrictedException")
+        void updateAlias_WhenDemoAccount_ShouldThrowException() {
+            // GIVEN
+            UpdateAliasRequestDTO requestDTO = new UpdateAliasRequestDTO("Nuevo Alias");
+
+            // WHEN & THEN
+            assertThrows(DemoAccountRestrictedException.class, () -> {
+                userService.updateAlias("demo-en@redcheck.com", requestDTO);
             });
 
             verify(userRepository, never()).findByEmail(any());

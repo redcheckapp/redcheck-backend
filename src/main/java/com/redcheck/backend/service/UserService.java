@@ -1,6 +1,7 @@
 package com.redcheck.backend.service;
 
 import com.redcheck.backend.dto.request.ChangePasswordRequestDTO;
+import com.redcheck.backend.dto.request.UpdateAliasRequestDTO;
 import com.redcheck.backend.entity.User;
 import com.redcheck.backend.exception.DemoAccountRestrictedException;
 import com.redcheck.backend.exception.InvalidCurrentPasswordException;
@@ -15,6 +16,8 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class UserService {
+
+    private static final int ALIAS_MAX_LENGTH = 30;
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -60,6 +63,31 @@ public class UserService {
         }
 
         user.setPassword(passwordEncoder.encode(requestDTO.newPassword()));
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void updateAlias(String email, UpdateAliasRequestDTO requestDTO) {
+        // Same shared-identity reasoning as changePassword above: the two
+        // seeded demo accounts are public and shared, so letting anyone
+        // change the alias every visitor sees on that account isn't
+        // acceptable either, even though an alias is otherwise harmless.
+        if (DemoAccountUtils.isDemoAccount(email)) {
+            throw new DemoAccountRestrictedException();
+        }
+
+        String alias = requestDTO.alias() == null ? null : requestDTO.alias().trim();
+        if (alias != null && alias.length() > ALIAS_MAX_LENGTH) {
+            throw new IllegalArgumentException("Alias must be at most " + ALIAS_MAX_LENGTH + " characters long");
+        }
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // A blank alias resets to the default (the username itself, see
+        // User#getDisplayAlias) rather than being rejected as invalid — this
+        // is how a user "un-sets" a custom alias without deleting anything.
+        user.setAlias((alias == null || alias.isBlank()) ? null : alias);
         userRepository.save(user);
     }
 }

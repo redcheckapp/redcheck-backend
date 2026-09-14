@@ -2,6 +2,7 @@ package com.redcheck.backend;
 
 import com.redcheck.backend.controller.UserController;
 import com.redcheck.backend.dto.request.ChangePasswordRequestDTO;
+import com.redcheck.backend.dto.request.UpdateAliasRequestDTO;
 import com.redcheck.backend.entity.User;
 import com.redcheck.backend.exception.DemoAccountRestrictedException;
 import com.redcheck.backend.exception.InvalidCurrentPasswordException;
@@ -88,6 +89,7 @@ public class UserControllerIntegrationTest {
                     .andExpect(MockMvcResultMatchers.content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
 
                     .andExpect(MockMvcResultMatchers.jsonPath("$.username").value(mockUser.getActualUsername()))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.alias").value(mockUser.getDisplayAlias()))
                     .andExpect(MockMvcResultMatchers.jsonPath("$.hasPassword").value(true));
         }
     }
@@ -188,6 +190,56 @@ public class UserControllerIntegrationTest {
 
             // WHEN & THEN
             mockMvc.perform(patch("/users/me/password")
+                            .with(csrf())
+                            .with(authentication(demoAuthToken))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(requestDTO)))
+                    .andExpect(status().isForbidden());
+        }
+    }
+
+    @Nested
+    @DisplayName("Endpoint: PATCH /users/me/alias")
+    class UpdateAliasTests {
+
+        @Test
+        @DisplayName("With valid data should return no content")
+        void updateAlias_WithValidData_ShouldReturnNoContent() throws Exception {
+            // GIVEN
+            UpdateAliasRequestDTO requestDTO = new UpdateAliasRequestDTO("Sergio");
+            doNothing().when(userService).updateAlias(anyString(), any(UpdateAliasRequestDTO.class));
+
+            // WHEN & THEN
+            mockMvc.perform(patch("/users/me/alias")
+                            .with(csrf())
+                            .with(authentication(mockAuthToken))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(requestDTO)))
+                    .andExpect(status().isNoContent());
+        }
+
+        @Test
+        @DisplayName("For the demo account should return forbidden")
+        void updateAlias_ForDemoAccount_ShouldReturnForbidden() throws Exception {
+            // GIVEN
+            User demoUser = User.builder()
+                    .username("demo-es")
+                    .email("demo-es@redcheck.com")
+                    .password("demoPassword")
+                    .build();
+            demoUser.setId(2L);
+            UsernamePasswordAuthenticationToken demoAuthToken = new UsernamePasswordAuthenticationToken(
+                    demoUser,
+                    null,
+                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
+            );
+
+            UpdateAliasRequestDTO requestDTO = new UpdateAliasRequestDTO("Nuevo Alias");
+            doThrow(new DemoAccountRestrictedException())
+                    .when(userService).updateAlias(anyString(), any(UpdateAliasRequestDTO.class));
+
+            // WHEN & THEN
+            mockMvc.perform(patch("/users/me/alias")
                             .with(csrf())
                             .with(authentication(demoAuthToken))
                             .contentType(MediaType.APPLICATION_JSON)
