@@ -8,6 +8,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -147,6 +148,40 @@ public class FrequencyUtilsTest {
         void nextExecution_MonthlyLast_ShouldRollOverOnceAlreadyLastDay() {
             LocalDateTime from = LocalDateTime.of(2026, 2, 28, 0, 0);
             assertEquals(LocalDateTime.of(2026, 3, 31, 0, 0), FrequencyUtils.nextExecution("MONTHLY:LAST", from));
+        }
+    }
+
+    @Nested
+    @DisplayName("Method: firstOccurrenceOnOrAfter")
+    class FirstOccurrenceOnOrAfterTests {
+
+        // 2026-10-20 is a Tuesday.
+        private final LocalDate tuesday = LocalDate.of(2026, 10, 20);
+
+        @Test
+        @DisplayName("A simple preset should start on the given date itself")
+        void firstOccurrence_ForSimplePreset_ShouldReturnSameDate() {
+            assertEquals(tuesday, FrequencyUtils.firstOccurrenceOnOrAfter("WEEKLY", tuesday));
+        }
+
+        @Test
+        @DisplayName("A custom weekday pattern should return the date when it matches")
+        void firstOccurrence_ForMatchingWeekday_ShouldReturnSameDate() {
+            assertEquals(tuesday, FrequencyUtils.firstOccurrenceOnOrAfter("0 0 0 * * 2,5", tuesday));
+        }
+
+        @Test
+        @DisplayName("A custom Mon/Thu pattern starting on a Tuesday should land on Thursday, not Wednesday")
+        void firstOccurrence_ForNonMatchingWeekday_ShouldSkipToNextMatch() {
+            assertEquals(LocalDate.of(2026, 10, 22), FrequencyUtils.firstOccurrenceOnOrAfter("0 0 0 * * 1,4", tuesday));
+        }
+
+        @Test
+        @DisplayName("A custom day-of-month pattern should land on that day")
+        void firstOccurrence_ForMonthlyDay_ShouldReturnThatDay() {
+            assertEquals(LocalDate.of(2026, 11, 15), FrequencyUtils.firstOccurrenceOnOrAfter("MONTHLY:15", tuesday));
+            assertEquals(tuesday, FrequencyUtils.firstOccurrenceOnOrAfter("MONTHLY:20", tuesday));
+            assertEquals(LocalDate.of(2026, 10, 31), FrequencyUtils.firstOccurrenceOnOrAfter("MONTHLY:LAST", tuesday));
         }
     }
 }

@@ -64,6 +64,19 @@ public class FrequencyUtils {
         return next;
     }
 
+    // The first date on or after `date` that this frequency selects. Simple
+    // presets have no pattern of their own — any day is a valid start — so
+    // it's `date` itself; custom weekday / day-of-month frequencies return the
+    // first matching day. Used to place a routine's very first occurrence
+    // (when there's no previous one to step forward from).
+    public static LocalDate firstOccurrenceOnOrAfter(String frequency, LocalDate date) {
+        if (isSimple(frequency)) {
+            return date;
+        }
+        // nextExecution is strictly-after, so start from the previous day.
+        return nextExecution(frequency, date.minusDays(1).atStartOfDay()).toLocalDate();
+    }
+
     private static LocalDateTime nextMonthlyDayExecution(String dayToken, LocalDateTime from) {
         LocalDate fromDate = from.toLocalDate();
 
