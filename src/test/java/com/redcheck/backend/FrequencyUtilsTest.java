@@ -8,6 +8,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -147,6 +148,81 @@ public class FrequencyUtilsTest {
         void nextExecution_MonthlyLast_ShouldRollOverOnceAlreadyLastDay() {
             LocalDateTime from = LocalDateTime.of(2026, 2, 28, 0, 0);
             assertEquals(LocalDateTime.of(2026, 3, 31, 0, 0), FrequencyUtils.nextExecution("MONTHLY:LAST", from));
+        }
+    }
+
+    @Nested
+    @DisplayName("Method: firstOccurrenceOnOrAfter")
+    class FirstOccurrenceOnOrAfterTests {
+
+        // 2026-10-20 is a Tuesday.
+        private final LocalDate tuesday = LocalDate.of(2026, 10, 20);
+
+        @Test
+        @DisplayName("A simple preset should start on the given date itself")
+        void firstOccurrence_ForSimplePreset_ShouldReturnSameDate() {
+            assertEquals(tuesday, FrequencyUtils.firstOccurrenceOnOrAfter("WEEKLY", tuesday));
+        }
+
+        @Test
+        @DisplayName("A custom weekday pattern should return the date when it matches")
+        void firstOccurrence_ForMatchingWeekday_ShouldReturnSameDate() {
+            assertEquals(tuesday, FrequencyUtils.firstOccurrenceOnOrAfter("0 0 0 * * 2,5", tuesday));
+        }
+
+        @Test
+        @DisplayName("A custom Mon/Thu pattern starting on a Tuesday should land on Thursday, not Wednesday")
+        void firstOccurrence_ForNonMatchingWeekday_ShouldSkipToNextMatch() {
+            assertEquals(LocalDate.of(2026, 10, 22), FrequencyUtils.firstOccurrenceOnOrAfter("0 0 0 * * 1,4", tuesday));
+        }
+
+        @Test
+        @DisplayName("A custom day-of-month pattern should land on that day")
+        void firstOccurrence_ForMonthlyDay_ShouldReturnThatDay() {
+            assertEquals(LocalDate.of(2026, 11, 15), FrequencyUtils.firstOccurrenceOnOrAfter("MONTHLY:15", tuesday));
+            assertEquals(tuesday, FrequencyUtils.firstOccurrenceOnOrAfter("MONTHLY:20", tuesday));
+            assertEquals(LocalDate.of(2026, 10, 31), FrequencyUtils.firstOccurrenceOnOrAfter("MONTHLY:LAST", tuesday));
+        }
+    }
+
+    @Nested
+    @DisplayName("Methods: nextOccurrenceOnOrAfter / isDueOn")
+    class NextOccurrenceOnOrAfterTests {
+
+        // 2026-10-20 is a Tuesday.
+        private final LocalDate tuesday = LocalDate.of(2026, 10, 20);
+
+        @Test
+        @DisplayName("Never generated: falls back to the first occurrence the pattern selects")
+        void nextOccurrence_WhenNeverGenerated_ShouldUseFirstOccurrence() {
+            assertEquals(LocalDate.of(2026, 10, 22), FrequencyUtils.nextOccurrenceOnOrAfter("0 0 0 * * 1,4", null, tuesday));
+            assertFalse(FrequencyUtils.isDueOn("0 0 0 * * 1,4", null, tuesday));
+            assertTrue(FrequencyUtils.isDueOn("DAILY", null, tuesday));
+        }
+
+        @Test
+        @DisplayName("After a gap, a custom weekday pattern catches up to its next selected day, never firing in between")
+        void nextOccurrence_AfterGap_ShouldSkipToNextSelectedDay() {
+            // Last generated on a Monday months ago (paused and reactivated).
+            LocalDateTime staleMonday = LocalDate.of(2026, 6, 1).atStartOfDay().plusSeconds(1);
+            assertEquals(LocalDate.of(2026, 10, 22), FrequencyUtils.nextOccurrenceOnOrAfter("0 0 0 * * 1,4", staleMonday, tuesday));
+            assertFalse(FrequencyUtils.isDueOn("0 0 0 * * 1,4", staleMonday, tuesday));
+            assertTrue(FrequencyUtils.isDueOn("0 0 0 * * 1,4", staleMonday, LocalDate.of(2026, 10, 22)));
+        }
+
+        @Test
+        @DisplayName("Already generated today: the next occurrence is a later day, so it's not due again")
+        void isDueOn_WhenAlreadyGeneratedToday_ShouldBeFalse() {
+            assertFalse(FrequencyUtils.isDueOn("DAILY", tuesday.atStartOfDay().plusSeconds(1), tuesday));
+            assertFalse(FrequencyUtils.isDueOn("0 0 0 * * 2", tuesday.atStartOfDay().plusSeconds(1), tuesday));
+        }
+
+        @Test
+        @DisplayName("A monthly day-31 pattern catches up across short months by clamping")
+        void nextOccurrence_ForMonthlyDay31_ShouldClamp() {
+            LocalDateTime jan31 = LocalDate.of(2026, 1, 31).atStartOfDay().plusSeconds(1);
+            assertEquals(LocalDate.of(2026, 2, 28), FrequencyUtils.nextOccurrenceOnOrAfter("MONTHLY:31", jan31, LocalDate.of(2026, 2, 1)));
+            assertEquals(LocalDate.of(2026, 3, 31), FrequencyUtils.nextOccurrenceOnOrAfter("MONTHLY:31", jan31, LocalDate.of(2026, 3, 1)));
         }
     }
 }

@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -94,9 +95,10 @@ public class RecurringTaskSchedulerServiceTest {
         }
 
         @Test
-        @DisplayName("When time passed but last task is incomplete should NOT create task but update date")
-        void generateTask_WhenLastTaskIncomplete_ShouldNotCreateTaskButUpdateDate() {
-            // GIVEN:
+        @DisplayName("When today is due but last task is incomplete should NOT create task nor touch the routine")
+        void generateTask_WhenLastTaskIncomplete_ShouldNotCreateTaskNorSave() {
+            // GIVEN: DAILY is always due, so today is a due day regardless of
+            // how stale latestGeneratedDate is
             mockRecurringTask.setLatestGeneratedDate(LocalDateTime.now().minusYears(10));
 
             when(recurringTaskRepository.findAllByActiveTrue())
@@ -108,9 +110,121 @@ public class RecurringTaskSchedulerServiceTest {
             // WHEN
             recurringTaskSchedulerService.generateTask();
 
-            // THEN:
+            // THEN: nothing is generated, and the routine itself is left
+            // untouched — latestGeneratedDate must keep reflecting the date
+            // of the last actual generation, not a skipped check
             verify(taskRepository, never()).save(any(Task.class));
+            verify(recurringTaskRepository, never()).save(any(RecurringTask.class));
+        }
+
+        @Test
+        @DisplayName("Custom weekday frequency, never generated: should create the first task only on a selected day")
+        void generateTask_CustomWeekday_FirstOccurrence_ShouldRespectPattern() {
+            // GIVEN: two brand-new routines (latestGeneratedDate null) — one
+            // selecting only today's weekday, one selecting only tomorrow's.
+            // Before the fix, both generated on the first tick regardless.
+            int todayCron = LocalDate.now().getDayOfWeek().getValue() % 7;
+            int tomorrowCron = LocalDate.now().plusDays(1).getDayOfWeek().getValue() % 7;
+            RecurringTask dueToday = RecurringTask.builder()
+                    .title("Due today").frequency("0 0 0 * * " + todayCron).active(true).latestGeneratedDate(null).build();
+            RecurringTask dueTomorrow = RecurringTask.builder()
+                    .title("Due tomorrow").frequency("0 0 0 * * " + tomorrowCron).active(true).latestGeneratedDate(null).build();
+
+            when(recurringTaskRepository.findAllByActiveTrue()).thenReturn(List.of(dueToday, dueTomorrow));
+
+            // WHEN
+            recurringTaskSchedulerService.generateTask();
+
+            // THEN
+            verify(taskRepository, times(1)).save(any(Task.class));
+            verify(recurringTaskRepository, times(1)).save(dueToday);
+            verify(recurringTaskRepository, never()).save(dueTomorrow);
+        }
+
+        @Test
+        @DisplayName("Custom weekday frequency: should NOT generate on a day that isn't selected, even if overdue")
+        void generateTask_CustomWeekday_WhenNotDueToday_ShouldNotGenerate() {
+            // GIVEN: a routine that only fires on Mondays (day-of-week 1),
+            // whose latestGeneratedDate is a stale Monday from weeks ago —
+            // e.g. it was paused and reactivated, or its frequency was
+            // edited from a different set of days. Today is whatever day
+            // the test actually runs on and is not guaranteed to be a
+            // Monday, so pin "today" indirectly by asserting against the
+            // real LocalDate.now() below.
+            mockRecurringTask.setFrequency("0 0 0 * * 1");
+            mockRecurringTask.setLatestGeneratedDate(LocalDate.now().minusYears(1).atStartOfDay());
+
+            when(recurringTaskRepository.findAllByActiveTrue())
+                    .thenReturn(Collections.singletonList(mockRecurringTask));
+
+            boolean todayIsMonday = LocalDate.now().getDayOfWeek().getValue() == 1;
+            if (todayIsMonday) {
+                when(taskRepository.findTopByRecurringTaskAndDeletedFalseOrderByAssignedDateDesc(mockRecurringTask))
+                        .thenReturn(Optional.of(mockCompleteTask));
+            }
+
+            // WHEN
+            recurringTaskSchedulerService.generateTask();
+
+            // THEN: only generates if today genuinely is a Monday; any other
+            // day, it must not generate even though the routine is clearly
+            // overdue relative to its stale latestGeneratedDate — and the
+            // lastTask lookup must never even happen in that case
+            if (todayIsMonday) {
+                verify(taskRepository, times(1)).save(any(Task.class));
+            } else {
+                verify(taskRepository, never())
+                        .findTopByRecurringTaskAndDeletedFalseOrderByAssignedDateDesc(any(RecurringTask.class));
+                verify(taskRepository, never()).save(any(Task.class));
+                verify(recurringTaskRepository, never()).save(any(RecurringTask.class));
+            }
+        }
+
+        @Test
+        @DisplayName("Custom weekday frequency: should generate when today matches and the last instance is completed")
+        void generateTask_CustomWeekday_WhenDueTodayAndLastCompleted_ShouldGenerate() {
+            // GIVEN: frequency set to today's own weekday, with a stale
+            // latestGeneratedDate from a year ago so it's clearly "overdue"
+            // under the old next-vs-now comparison too
+            int todayIsoDayOfWeek = LocalDate.now().getDayOfWeek().getValue();
+            int cronDayOfWeek = todayIsoDayOfWeek % 7; // ISO Monday=1..Sunday=7 -> cron Sunday=0..Saturday=6
+            mockRecurringTask.setFrequency("0 0 0 * * " + cronDayOfWeek);
+            mockRecurringTask.setLatestGeneratedDate(LocalDate.now().minusYears(1).atStartOfDay());
+
+            when(recurringTaskRepository.findAllByActiveTrue())
+                    .thenReturn(Collections.singletonList(mockRecurringTask));
+            when(taskRepository.findTopByRecurringTaskAndDeletedFalseOrderByAssignedDateDesc(mockRecurringTask))
+                    .thenReturn(Optional.of(mockCompleteTask));
+
+            // WHEN
+            recurringTaskSchedulerService.generateTask();
+
+            // THEN
+            verify(taskRepository, times(1)).save(any(Task.class));
             verify(recurringTaskRepository, times(1)).save(mockRecurringTask);
+        }
+
+        @Test
+        @DisplayName("Custom weekday frequency: should NOT generate when today matches but the last instance is still incomplete")
+        void generateTask_CustomWeekday_WhenDueTodayButLastIncomplete_ShouldNotGenerate() {
+            // GIVEN: frequency set to today's own weekday, so it's due, but
+            // the previous occurrence hasn't been completed yet
+            int todayIsoDayOfWeek = LocalDate.now().getDayOfWeek().getValue();
+            int cronDayOfWeek = todayIsoDayOfWeek % 7;
+            mockRecurringTask.setFrequency("0 0 0 * * " + cronDayOfWeek);
+            mockRecurringTask.setLatestGeneratedDate(LocalDate.now().minusYears(1).atStartOfDay());
+
+            when(recurringTaskRepository.findAllByActiveTrue())
+                    .thenReturn(Collections.singletonList(mockRecurringTask));
+            when(taskRepository.findTopByRecurringTaskAndDeletedFalseOrderByAssignedDateDesc(mockRecurringTask))
+                    .thenReturn(Optional.of(mockIncompleteTask));
+
+            // WHEN
+            recurringTaskSchedulerService.generateTask();
+
+            // THEN
+            verify(taskRepository, never()).save(any(Task.class));
+            verify(recurringTaskRepository, never()).save(any(RecurringTask.class));
         }
 
         @Test

@@ -90,31 +90,25 @@ public class RecurringTaskSchedulerService {
     }
 
     private boolean shouldGenerate(RecurringTask recurringTask) {
+        // Only on a day the frequency actually selects — see
+        // FrequencyUtils#nextOccurrenceOnOrAfter. For a never-generated
+        // routine, a simple preset starts on the first tick but a custom
+        // pattern waits for its first selected day (a Mon/Thu routine created
+        // on a Tuesday used to get its first task on Wednesday).
+        if (!FrequencyUtils.isDueOn(recurringTask.getFrequency(), recurringTask.getLatestGeneratedDate(), LocalDate.now())) {
+            return false;
+        }
         if (recurringTask.getLatestGeneratedDate() == null) {
             return true;
         }
 
-        LocalDateTime next = FrequencyUtils.nextExecution(
-                recurringTask.getFrequency(),
-                recurringTask.getLatestGeneratedDate()
-        );
+        // Today is a due day for this routine's frequency — only generate if
+        // the previous occurrence has already been completed (or there is
+        // none yet), so a still-pending task from a prior cycle is never
+        // silently duplicated.
+        Optional<Task> lastTask = taskRepository
+                .findTopByRecurringTaskAndDeletedFalseOrderByAssignedDateDesc(recurringTask);
 
-        if (!LocalDateTime.now().isBefore(next)) {
-
-            // Search for the latest associated task generated
-            Optional<Task> lastTask = taskRepository
-                    .findTopByRecurringTaskAndDeletedFalseOrderByAssignedDateDesc(recurringTask);
-
-            // If it exists and is not completed, update the generation date without creating a duplicate
-            if (lastTask.isPresent() && lastTask.get().getCompletedDate() == null) {
-                recurringTask.setLatestGeneratedDate(LocalDateTime.now());
-                recurringTaskRepository.save(recurringTask);
-                return false;
-            }
-
-            return true;
-        }
-
-        return false;
+        return lastTask.isEmpty() || lastTask.get().getCompletedDate() != null;
     }
 }

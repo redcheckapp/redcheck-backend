@@ -208,15 +208,11 @@ public class RecurringTaskService {
             return null;
         }
 
-        LocalDate nextDate;
-        if (recurringTask.getLatestGeneratedDate() == null) {
-            // Never generated yet — the scheduler creates the first
-            // occurrence on its very next daily tick regardless of
-            // frequency (see RecurringTaskSchedulerService#shouldGenerate).
-            nextDate = LocalDate.now().plusDays(1);
-        } else {
-            nextDate = FrequencyUtils.nextExecution(recurringTask.getFrequency(), recurringTask.getLatestGeneratedDate()).toLocalDate();
-        }
+        // Mirrors RecurringTaskSchedulerService#shouldGenerate. The scheduler
+        // ticks at midnight, so today's run has already happened: the
+        // preview is always tomorrow or later.
+        LocalDate nextDate = FrequencyUtils.nextOccurrenceOnOrAfter(
+                recurringTask.getFrequency(), recurringTask.getLatestGeneratedDate(), LocalDate.now().plusDays(1));
 
         if (recurringTask.getEndDate() != null && nextDate.isAfter(recurringTask.getEndDate())) {
             return null;

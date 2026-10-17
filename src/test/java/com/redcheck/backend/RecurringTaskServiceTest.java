@@ -259,6 +259,24 @@ public class RecurringTaskServiceTest {
         }
 
         @Test
+        @DisplayName("When never generated with a custom weekday pattern should preview its first selected day")
+        void nextOccurrence_WhenNeverGeneratedCustomWeekday_ShouldPreviewFirstMatch() {
+            // GIVEN: a pattern selecting only the weekday two days from now,
+            // so tomorrow doesn't match.
+            LocalDate inTwoDays = LocalDate.now().plusDays(2);
+            mockRecurringTask.setFrequency("0 0 0 * * " + (inTwoDays.getDayOfWeek().getValue() % 7));
+
+            when(recurringTaskRepository.findAllBySubject_User_Id(currentUser.getId()))
+                    .thenReturn(Collections.singletonList(mockRecurringTask));
+
+            // WHEN
+            RecurringTaskResponseDTO result = recurringTaskService.getAllRecurringTask(currentUser, null, null).get(0);
+
+            // THEN
+            assertEquals(inTwoDays.atStartOfDay(), result.nextOccurrence());
+        }
+
+        @Test
         @DisplayName("When a time-of-day is set should apply it instead of midnight")
         void nextOccurrence_WhenTimeIsSet_ShouldApplyIt() {
             // GIVEN
@@ -275,11 +293,11 @@ public class RecurringTaskServiceTest {
         }
 
         @Test
-        @DisplayName("When already generated before should project from the frequency, not tomorrow")
+        @DisplayName("When already generated before should project from the frequency, walked past today")
         void nextOccurrence_WhenAlreadyGenerated_ShouldProjectFromFrequency() {
-            // GIVEN: WEEKLY, last generated 10 days ago — next should be 7
-            // days after that, i.e. 3 days in the past relative to today,
-            // not "tomorrow" (that fallback only applies pre-first-generation).
+            // GIVEN: WEEKLY, last generated 10 days ago — +7 days would be 3
+            // days in the past (e.g. a paused routine), so the preview keeps
+            // stepping by the frequency to +14, the first date after today.
             LocalDateTime lastGenerated = LocalDateTime.now().minusDays(10);
             mockRecurringTask.setLatestGeneratedDate(lastGenerated);
 
@@ -290,7 +308,7 @@ public class RecurringTaskServiceTest {
             RecurringTaskResponseDTO result = recurringTaskService.getAllRecurringTask(currentUser, null, null).get(0);
 
             // THEN
-            assertEquals(lastGenerated.plusWeeks(1).toLocalDate().atStartOfDay(), result.nextOccurrence());
+            assertEquals(lastGenerated.plusWeeks(2).toLocalDate().atStartOfDay(), result.nextOccurrence());
         }
 
         @Test

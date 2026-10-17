@@ -151,12 +151,10 @@ public class RecurringCalendarEventService {
             return null;
         }
 
-        LocalDate nextDate;
-        if (recurringEvent.getLatestGeneratedDate() == null) {
-            nextDate = LocalDate.now().plusDays(1);
-        } else {
-            nextDate = FrequencyUtils.nextExecution(recurringEvent.getFrequency(), recurringEvent.getLatestGeneratedDate()).toLocalDate();
-        }
+        // Mirrors RecurringCalendarEventSchedulerService#shouldGenerate; the
+        // scheduler ticks at midnight, so the preview is tomorrow or later.
+        LocalDate nextDate = FrequencyUtils.nextOccurrenceOnOrAfter(
+                recurringEvent.getFrequency(), recurringEvent.getLatestGeneratedDate(), LocalDate.now().plusDays(1));
 
         if (recurringEvent.getEndDate() != null && nextDate.isAfter(recurringEvent.getEndDate())) {
             return null;
