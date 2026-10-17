@@ -30,6 +30,12 @@ app:
     api-key: ${RESEND_API_KEY:}
   frontend:
     url: ${FRONTEND_URL:http://localhost:5173}
+  admin:
+    # Comma-separated. Empty (the default) means nobody can reach /admin/**.
+    emails: ${ADMIN_EMAILS:}
+  # Commit the running image was built from; CI passes it as a Docker build
+  # arg (see Dockerfile). Shown on the developer dashboard.
+  git-sha: ${APP_GIT_SHA:unknown}
 
 ai:
   engine:

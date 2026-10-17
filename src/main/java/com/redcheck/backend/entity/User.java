@@ -47,6 +47,12 @@ public class User implements UserDetails {
     @Column(name = "creation_date", nullable = false, updatable = false)
     private LocalDateTime creationDate;
 
+    // Last authenticated request, at most ~1h stale (see UserActivityService).
+    // Null = not seen since this column was added. Feeds the developer
+    // dashboard's active-user counts only.
+    @Column(name = "last_seen_at")
+    private LocalDateTime lastSeenAt;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Subject> subjects = new ArrayList<>();
 

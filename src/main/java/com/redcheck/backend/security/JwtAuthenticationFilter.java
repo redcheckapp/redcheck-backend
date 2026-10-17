@@ -1,11 +1,14 @@
 package com.redcheck.backend.security;
 
+import com.redcheck.backend.entity.User;
+import com.redcheck.backend.event.UserSeenEvent;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -22,6 +25,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
+    private final ApplicationEventPublisher eventPublisher;
 
     @Override
     protected void doFilterInternal(
@@ -56,6 +60,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 );
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authToken);
+
+                if (userDetails instanceof User user) {
+                    eventPublisher.publishEvent(new UserSeenEvent(user));
+                }
             }
         }
         

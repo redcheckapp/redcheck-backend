@@ -33,6 +33,8 @@ jobs:
           context: .
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/redcheck-backend:latest
+          build-args: |
+            GIT_SHA=${{ github.sha }}
 
   deploy:
     needs: build-and-push
