@@ -72,13 +72,11 @@ public class RecurringCalendarEventSchedulerService {
         return template.getEndDate() != null && !LocalDate.now().isBefore(template.getEndDate());
     }
 
+    // Same rule as RecurringTaskSchedulerService (minus its pending-task
+    // check): only on a day the frequency actually selects, including the
+    // very first occurrence — see FrequencyUtils#nextOccurrenceOnOrAfter.
     private boolean shouldGenerate(RecurringCalendarEvent template) {
-        if (template.getLatestGeneratedDate() == null) {
-            return true;
-        }
-
-        LocalDateTime next = FrequencyUtils.nextExecution(template.getFrequency(), template.getLatestGeneratedDate());
-        return !LocalDateTime.now().isBefore(next);
+        return FrequencyUtils.isDueOn(template.getFrequency(), template.getLatestGeneratedDate(), LocalDate.now());
     }
 
     private CalendarEvent buildOccurrence(RecurringCalendarEvent template) {

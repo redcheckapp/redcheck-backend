@@ -77,6 +77,29 @@ public class FrequencyUtils {
         return nextExecution(frequency, date.minusDays(1).atStartOfDay()).toLocalDate();
     }
 
+    // The routine's next occurrence on or after `date`, given when it last
+    // generated (null = never). With a previous occurrence, the frequency is
+    // stepped forward from it until it's no longer before `date` — so after
+    // a gap (paused and reactivated, days edited, a missed scheduler run) it
+    // catches up to a day the pattern actually selects instead of firing on
+    // whatever day it happens to be. Single source of truth for both
+    // recurring schedulers and both nextOccurrence previews.
+    public static LocalDate nextOccurrenceOnOrAfter(String frequency, LocalDateTime latestGeneratedDate, LocalDate date) {
+        if (latestGeneratedDate == null) {
+            return firstOccurrenceOnOrAfter(frequency, date);
+        }
+        LocalDateTime next = nextExecution(frequency, latestGeneratedDate);
+        while (next.toLocalDate().isBefore(date)) {
+            next = nextExecution(frequency, next);
+        }
+        return next.toLocalDate();
+    }
+
+    // Whether a routine should generate on `date` (the schedulers pass today).
+    public static boolean isDueOn(String frequency, LocalDateTime latestGeneratedDate, LocalDate date) {
+        return nextOccurrenceOnOrAfter(frequency, latestGeneratedDate, date).isEqual(date);
+    }
+
     private static LocalDateTime nextMonthlyDayExecution(String dayToken, LocalDateTime from) {
         LocalDate fromDate = from.toLocalDate();
 

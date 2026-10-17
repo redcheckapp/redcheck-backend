@@ -90,17 +90,16 @@ public class RecurringTaskSchedulerService {
     }
 
     private boolean shouldGenerate(RecurringTask recurringTask) {
-        // First occurrence ever: a simple preset starts on the first tick
-        // after creation, but a custom pattern only starts on a day it
-        // actually selects — a Mon/Thu routine created on a Tuesday used to
-        // get its first task on Wednesday.
-        if (recurringTask.getLatestGeneratedDate() == null) {
-            LocalDate today = LocalDate.now();
-            return FrequencyUtils.firstOccurrenceOnOrAfter(recurringTask.getFrequency(), today).isEqual(today);
-        }
-
-        if (!isDueToday(recurringTask)) {
+        // Only on a day the frequency actually selects — see
+        // FrequencyUtils#nextOccurrenceOnOrAfter. For a never-generated
+        // routine, a simple preset starts on the first tick but a custom
+        // pattern waits for its first selected day (a Mon/Thu routine created
+        // on a Tuesday used to get its first task on Wednesday).
+        if (!FrequencyUtils.isDueOn(recurringTask.getFrequency(), recurringTask.getLatestGeneratedDate(), LocalDate.now())) {
             return false;
+        }
+        if (recurringTask.getLatestGeneratedDate() == null) {
+            return true;
         }
 
         // Today is a due day for this routine's frequency — only generate if
@@ -111,32 +110,5 @@ public class RecurringTaskSchedulerService {
                 .findTopByRecurringTaskAndDeletedFalseOrderByAssignedDateDesc(recurringTask);
 
         return lastTask.isEmpty() || lastTask.get().getCompletedDate() != null;
-    }
-
-    // Whether the routine's frequency is actually due *today* — not just
-    // "has the previously-computed next execution already passed," which
-    // would fire on whatever day the scheduler next happens to run rather
-    // than a day the frequency actually selects. That distinction only
-    // matters for custom frequencies (specific weekdays / a specific day of
-    // month): a gap — the routine paused and later reactivated, its
-    // frequency edited to a different set of days, or a scheduler run
-    // missed (e.g. a deploy around midnight) — used to make the next tick
-    // generate immediately regardless of whether today matched the pattern.
-    // Walking `next` forward with FrequencyUtils until it's no longer in
-    // the past (instead of a single now-vs-next comparison) catches up to
-    // the frequency's real next occurrence without ever generating on a day
-    // the pattern doesn't select.
-    private boolean isDueToday(RecurringTask recurringTask) {
-        LocalDate today = LocalDate.now();
-        LocalDateTime next = FrequencyUtils.nextExecution(
-                recurringTask.getFrequency(),
-                recurringTask.getLatestGeneratedDate()
-        );
-
-        while (next.toLocalDate().isBefore(today)) {
-            next = FrequencyUtils.nextExecution(recurringTask.getFrequency(), next);
-        }
-
-        return next.toLocalDate().isEqual(today);
     }
 }
