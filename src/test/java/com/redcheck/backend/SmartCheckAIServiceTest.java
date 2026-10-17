@@ -5,6 +5,7 @@ import com.redcheck.backend.entity.User;
 import com.redcheck.backend.repository.AiResponseRepository;
 import com.redcheck.backend.repository.NotificationRepository;
 import com.redcheck.backend.repository.TaskRepository;
+import com.redcheck.backend.service.AiUsageService;
 import com.redcheck.backend.service.SmartCheckAIService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -34,6 +35,9 @@ public class SmartCheckAIServiceTest {
 
     @Mock
     private AiResponseRepository aiResponseRepository;
+
+    @Mock
+    private AiUsageService aiUsageService;
 
     @InjectMocks
     private SmartCheckAIService smartCheckAIService;

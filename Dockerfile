@@ -14,6 +14,11 @@ RUN mvn clean package -Dmaven.test.skip=true
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
+# Commit this image was built from, shown on the developer dashboard. CI
+# passes it (deploy.yml); local/compose builds fall back to "unknown".
+ARG GIT_SHA=unknown
+ENV APP_GIT_SHA=$GIT_SHA
+
 # Security: Create and use non-root user
 RUN addgroup -S spring && adduser -S spring -G spring
 USER spring:spring

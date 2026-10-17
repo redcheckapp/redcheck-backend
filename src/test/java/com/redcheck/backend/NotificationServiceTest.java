@@ -13,6 +13,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import com.redcheck.backend.exception.NotificationNotFoundException;
+import java.util.Optional;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -104,6 +106,57 @@ public class NotificationServiceTest {
             assertEquals(mockNotification.getTitle(), dto.title());
             verify(notificationRepository, times(1)).findAllByUser(user);
             verify(notificationRepository, never()).findAllByUserAndRead(any(User.class), anyBoolean());
+        }
+    }
+
+    @Nested
+    @DisplayName("Method: getNotificationsByType")
+    class GetNotificationsByTypeTests {
+
+        @Test
+        @DisplayName("Should filter by type and read state, including the type in the DTO")
+        void getNotificationsByType_ShouldFilterAndMapType() {
+            // GIVEN
+            mockNotification.setType(Notification.Type.FEEDBACK_REPLY);
+            when(notificationRepository.findAllByUserAndReadAndTypeOrderByCreationDateDesc(user, false, Notification.Type.FEEDBACK_REPLY))
+                    .thenReturn(List.of(mockNotification));
+
+            // WHEN
+            List<NotificationResponseDTO> result = notificationService.getNotificationsByType(user, false, Notification.Type.FEEDBACK_REPLY);
+
+            // THEN
+            assertEquals(1, result.size());
+            assertEquals(Notification.Type.FEEDBACK_REPLY, result.get(0).type());
+        }
+    }
+
+    @Nested
+    @DisplayName("Method: markAsRead")
+    class MarkAsReadTests {
+
+        @Test
+        @DisplayName("Should mark the user's own notification as read")
+        void markAsRead_ForOwnNotification_ShouldSetRead() {
+            // GIVEN
+            when(notificationRepository.findByIdAndUser(10L, user)).thenReturn(Optional.of(mockNotification));
+
+            // WHEN
+            notificationService.markAsRead(user, 10L);
+
+            // THEN
+            assertTrue(mockNotification.isRead());
+            verify(notificationRepository).save(mockNotification);
+        }
+
+        @Test
+        @DisplayName("Should throw for a missing or someone else's notification")
+        void markAsRead_WhenNotOwned_ShouldThrow() {
+            // GIVEN
+            when(notificationRepository.findByIdAndUser(99L, user)).thenReturn(Optional.empty());
+
+            // WHEN & THEN
+            assertThrows(NotificationNotFoundException.class, () -> notificationService.markAsRead(user, 99L));
+            verify(notificationRepository, never()).save(any());
         }
     }
 }

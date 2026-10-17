@@ -7,6 +7,7 @@ import com.redcheck.backend.entity.User;
 import com.redcheck.backend.exception.DemoAccountRestrictedException;
 import com.redcheck.backend.exception.InvalidCurrentPasswordException;
 import com.redcheck.backend.exception.NewPasswordSameAsCurrentException;
+import com.redcheck.backend.service.AdminAccessService;
 import com.redcheck.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final AdminAccessService adminAccessService;
 
     @GetMapping("/profile")
     public ResponseEntity<UserResponseDTO> getUsername(@AuthenticationPrincipal User currentUser) {
@@ -31,6 +33,7 @@ public class UserController {
                 .alias(currentUser.getDisplayAlias())
                 .email(currentUser.getEmail())
                 .hasPassword(currentUser.getPassword() != null)
+                .isAdmin(adminAccessService.isAdmin(currentUser))
                 .build();
         return ResponseEntity.ok(responseDTO);
     }

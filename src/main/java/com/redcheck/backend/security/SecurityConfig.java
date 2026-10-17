@@ -1,10 +1,13 @@
 package com.redcheck.backend.security;
 
+import com.redcheck.backend.entity.User;
+import com.redcheck.backend.service.AdminAccessService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -24,6 +27,7 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final AuthenticationProvider authenticationProvider;
+    private final AdminAccessService adminAccessService;
 
     @Value("${app.cors.allowed-origins}")
     private List<String> allowedOrigins;
@@ -40,6 +44,11 @@ public class SecurityConfig {
                                 "/swagger-ui.html"
                         ).permitAll()
                         .requestMatchers("/users/**").authenticated()
+                        // Developer dashboard: only emails listed in ADMIN_EMAILS.
+                        .requestMatchers("/admin/**").access((authentication, context) ->
+                                new AuthorizationDecision(
+                                        authentication.get().getPrincipal() instanceof User user
+                                                && adminAccessService.isAdmin(user)))
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

@@ -2,7 +2,9 @@ package com.redcheck.backend;
 
 import com.redcheck.backend.controller.NotificationController;
 import com.redcheck.backend.dto.response.NotificationResponseDTO;
+import com.redcheck.backend.entity.Notification;
 import com.redcheck.backend.entity.User;
+import com.redcheck.backend.exception.NotificationNotFoundException;
 import com.redcheck.backend.security.JwtService;
 import com.redcheck.backend.service.NotificationService;
 import org.junit.jupiter.api.BeforeEach;
@@ -25,7 +27,11 @@ import java.util.Collections;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.authentication;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -109,6 +115,47 @@ public class NotificationControllerIntegrationTest {
                     .andExpect(MockMvcResultMatchers.jsonPath("$").isArray())
                     .andExpect(MockMvcResultMatchers.jsonPath("$[0].id").value(1L))
                     .andExpect(MockMvcResultMatchers.jsonPath("$[0].read").value(false));
+        }
+    }
+
+    @Nested
+    @DisplayName("Endpoint: GET with type")
+    class GetByTypeTests {
+
+        @Test
+        @DisplayName("With a type param should delegate to the type-filtered lookup")
+        void getNotifications_WithTypeParam_ShouldFilterByType() throws Exception {
+            when(notificationService.getNotificationsByType(any(User.class), eq(false), eq(Notification.Type.FEEDBACK_REPLY)))
+                    .thenReturn(Collections.emptyList());
+
+            mockMvc.perform(get("/notifications")
+                            .param("read", "false")
+                            .param("type", "FEEDBACK_REPLY")
+                            .with(authentication(mockAuthToken)))
+                    .andExpect(status().isOk());
+
+            verify(notificationService).getNotificationsByType(any(User.class), eq(false), eq(Notification.Type.FEEDBACK_REPLY));
+        }
+    }
+
+    @Nested
+    @DisplayName("Endpoint: PATCH /{id}/read")
+    class MarkAsReadTests {
+
+        @Test
+        @DisplayName("Should return no content")
+        void markAsRead_ShouldReturnNoContent() throws Exception {
+            mockMvc.perform(patch("/notifications/10/read").with(csrf()).with(authentication(mockAuthToken)))
+                    .andExpect(status().isNoContent());
+        }
+
+        @Test
+        @DisplayName("For a missing or someone else's notification should return not found")
+        void markAsRead_WhenNotFound_ShouldReturnNotFound() throws Exception {
+            doThrow(new NotificationNotFoundException(99L)).when(notificationService).markAsRead(any(User.class), eq(99L));
+
+            mockMvc.perform(patch("/notifications/99/read").with(csrf()).with(authentication(mockAuthToken)))
+                    .andExpect(status().isNotFound());
         }
     }
 }

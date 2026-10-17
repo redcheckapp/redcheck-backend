@@ -21,6 +21,13 @@ public class Feedback {
         BUG, SUGGESTION, PRAISE, OTHER
     }
 
+    // Triage state, only ever changed from the developer dashboard
+    // (PATCH /admin/feedback/{id}). SEEN is "read, not acted on yet" —
+    // distinct from NEW so the inbox's unread count means something.
+    public enum Status {
+        NEW, SEEN, IN_PROGRESS, DONE, WONTFIX
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -31,6 +38,22 @@ public class Feedback {
 
     @Column(columnDefinition = "TEXT", nullable = false)
     private String message;
+
+    // VARCHAR + DEFAULT (not Hibernate's native MySQL ENUM) so ddl-auto=update
+    // can add it to a table that already has rows — same as Task.priority.
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "VARCHAR(20) DEFAULT 'NEW'")
+    @Builder.Default
+    private Status status = Status.NEW;
+
+    // Private note for the developer dashboard; never shown to the user.
+    @Column(name = "admin_note", columnDefinition = "TEXT")
+    private String adminNote;
+
+    // Last time the author was sent an in-app reply from the dashboard
+    // (POST /admin/feedback/{id}/notify). Null = never.
+    @Column(name = "user_notified_date")
+    private LocalDateTime userNotifiedDate;
 
     @Column(name = "created_date", nullable = false, updatable = false)
     private LocalDateTime createdDate;

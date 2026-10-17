@@ -3,6 +3,7 @@ package com.redcheck.backend.service;
 import com.redcheck.backend.dto.request.EngineRequestDTO;
 import com.redcheck.backend.dto.request.TaskOutcomeDTO;
 import com.redcheck.backend.entity.AiResponse;
+import com.redcheck.backend.entity.AiUsageLog;
 import com.redcheck.backend.entity.Notification;
 import com.redcheck.backend.entity.Task;
 import com.redcheck.backend.entity.User;
@@ -35,6 +36,7 @@ public class SmartCheckAIService {
     private final NotificationRepository notificationRepository;
     private final TaskRepository taskRepository;
     private final AiResponseRepository aiResponseRepository;
+    private final AiUsageService aiUsageService;
 
     @Value("${ai.engine.url}")
     private String aiEngineUrl;
@@ -117,11 +119,24 @@ public class SmartCheckAIService {
             headers.setContentType(MediaType.APPLICATION_JSON);
             HttpEntity<EngineRequestDTO> entity = new HttpEntity<>(requestPayload, headers);
 
-            ResponseEntity<String> response = restTemplate.postForEntity(
-                    aiEngineUrl + "/api/v1/prioritize",
-                    entity,
-                    String.class
-            );
+            // Timed and logged on both outcomes for the developer dashboard's
+            // AI usage view — only the engine call itself, not the DB work
+            // around it, so a failure here really means "the engine failed".
+            long start = System.currentTimeMillis();
+            ResponseEntity<String> response;
+            try {
+                response = restTemplate.postForEntity(
+                        aiEngineUrl + "/api/v1/prioritize",
+                        entity,
+                        String.class
+                );
+            } catch (RuntimeException e) {
+                aiUsageService.record(AiUsageLog.Type.PRIORITIZE, false,
+                        System.currentTimeMillis() - start, pendingTasks.size(), currentUser);
+                throw e;
+            }
+            aiUsageService.record(AiUsageLog.Type.PRIORITIZE, true,
+                    System.currentTimeMillis() - start, pendingTasks.size(), currentUser);
 
             // 4. Save the returned JSON
             AiResponse aiResponse = AiResponse.builder()
@@ -151,6 +166,7 @@ public class SmartCheckAIService {
 
     @Async
     public void sendTaskOutcome(TaskOutcomeDTO outcome) {
+        long start = System.currentTimeMillis();
         try {
             RestTemplate restTemplate = new RestTemplate();
             HttpHeaders headers = new HttpHeaders();
@@ -162,8 +178,12 @@ public class SmartCheckAIService {
                     entity,
                     String.class
             );
+            aiUsageService.record(AiUsageLog.Type.TASK_OUTCOME, true,
+                    System.currentTimeMillis() - start, 1, null);
         } catch (Exception e) {
             log.error("Error sending task outcome for task ID {}", outcome.id(), e);
+            aiUsageService.record(AiUsageLog.Type.TASK_OUTCOME, false,
+                    System.currentTimeMillis() - start, 1, null);
         }
     }
 }

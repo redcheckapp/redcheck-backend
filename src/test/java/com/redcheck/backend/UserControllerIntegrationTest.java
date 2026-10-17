@@ -8,6 +8,7 @@ import com.redcheck.backend.exception.DemoAccountRestrictedException;
 import com.redcheck.backend.exception.InvalidCurrentPasswordException;
 import com.redcheck.backend.exception.NewPasswordSameAsCurrentException;
 import com.redcheck.backend.security.JwtService;
+import com.redcheck.backend.service.AdminAccessService;
 import com.redcheck.backend.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -50,6 +51,9 @@ public class UserControllerIntegrationTest {
     private UserService userService;
 
     @MockitoBean
+    private AdminAccessService adminAccessService;
+
+    @MockitoBean
     private JwtService jwtService;
 
     private User mockUser;
@@ -90,7 +94,23 @@ public class UserControllerIntegrationTest {
 
                     .andExpect(MockMvcResultMatchers.jsonPath("$.username").value(mockUser.getActualUsername()))
                     .andExpect(MockMvcResultMatchers.jsonPath("$.alias").value(mockUser.getDisplayAlias()))
-                    .andExpect(MockMvcResultMatchers.jsonPath("$.hasPassword").value(true));
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.hasPassword").value(true))
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.isAdmin").value(false));
+        }
+
+        @Test
+        @DisplayName("For an admin should flag isAdmin as true")
+        void getProfile_ForAdmin_ShouldReturnIsAdminTrue() throws Exception {
+            // GIVEN:
+            org.mockito.Mockito.when(adminAccessService.isAdmin(any(User.class))).thenReturn(true);
+
+            // WHEN & THEN:
+            mockMvc.perform(get("/users/profile")
+                            .with(authentication(mockAuthToken))
+                            .contentType(MediaType.APPLICATION_JSON))
+
+                    .andExpect(status().isOk())
+                    .andExpect(MockMvcResultMatchers.jsonPath("$.isAdmin").value(true));
         }
     }
 

@@ -13,6 +13,15 @@ import java.time.LocalDateTime;
 @Builder
 public class Notification {
 
+    // SYSTEM covers every notification created before types existed (the
+    // SmartCheck AI ones). The frontend's bell only lists FEEDBACK_REPLY for
+    // now — SYSTEM rows are English-only and already surfaced by the AI
+    // modal's own "analysis ready" UI, so showing them too would duplicate it.
+    public enum Type {
+        SYSTEM,
+        FEEDBACK_REPLY
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -22,6 +31,12 @@ public class Notification {
 
     @Column(nullable = false)
     private String message;
+
+    // VARCHAR + DEFAULT so ddl-auto=update can add it to the existing rows.
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "VARCHAR(30) DEFAULT 'SYSTEM'")
+    @Builder.Default
+    private Type type = Type.SYSTEM;
 
     @Builder.Default
     @Column(name = "is_read", nullable = false)

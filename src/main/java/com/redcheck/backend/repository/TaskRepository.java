@@ -63,4 +63,16 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
             "FROM Task t WHERE t.subject.user.id = :userId AND t.deleted = false " +
             "GROUP BY t.subject.name")
     List<Object[]> getSubjectCompletionRatios(@Param("userId") Long userId);
+
+    // Developer dashboard activity metrics: (userId, when) pairs for real user
+    // actions since `from` — completing a task, or creating one by hand.
+    // Scheduler-generated routine occurrences are excluded from "created"
+    // (their assignedDate is set by RecurringTaskSchedulerService, not by
+    // the user), but completing one still counts. Deleted tasks are kept on
+    // purpose: the action happened either way.
+    @Query("SELECT t.subject.user.id, t.completedDate FROM Task t WHERE t.completedDate >= :from")
+    List<Object[]> findCompletionActivitySince(@Param("from") LocalDateTime from);
+
+    @Query("SELECT t.subject.user.id, t.assignedDate FROM Task t WHERE t.recurringTask IS NULL AND t.assignedDate >= :from")
+    List<Object[]> findManualCreationActivitySince(@Param("from") LocalDateTime from);
 }
